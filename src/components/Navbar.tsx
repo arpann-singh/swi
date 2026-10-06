@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { SWLogo } from './SWLogo';
-import { ArrowUpRight, Home, BookOpen, Sparkles, PhoneCall, Send, MapPin } from 'lucide-react';
+import { ArrowUpRight, Home, BookOpen, Sparkles, MapPin, Send } from 'lucide-react';
+import { getStoredContent } from '@/lib/cms-store';
 
 interface NavbarProps {
   onOpenEnquiry: () => void;
@@ -12,13 +13,20 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
+  const [content, setContent] = useState(getStoredContent());
 
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 30);
     };
+    const handleUpdate = () => setContent(getStoredContent());
+
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('sw_cms_updated', handleUpdate);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('sw_cms_updated', handleUpdate);
+    };
   }, []);
 
   const mobileNavItems = [
@@ -42,7 +50,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       {/* MOBILE TOP HEADER: Clean SW Logo Header */}
       <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-4 py-3 bg-white/85 backdrop-blur-md border-b border-neutral-200/70 shadow-xs flex items-center justify-between">
         <a href="#" className="flex items-center gap-2">
-          <SWLogo layout="horizontal" variant="dark" size="sm" />
+          <SWLogo
+            layout="horizontal"
+            variant="dark"
+            size="sm"
+            customLogoUrl={content.logos?.mobileHeaderLogo || content.logos?.headerLogo}
+          />
         </a>
         <button
           onClick={onOpenEnquiry}
@@ -68,7 +81,12 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
         >
           {/* Logo */}
           <a href="#" className="group flex items-center gap-2">
-            <SWLogo layout="horizontal" variant="dark" size="sm" />
+            <SWLogo
+              layout="horizontal"
+              variant="dark"
+              size="sm"
+              customLogoUrl={content.logos?.headerLogo}
+            />
           </a>
 
           {/* Desktop Nav Links */}

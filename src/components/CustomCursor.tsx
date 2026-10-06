@@ -2,14 +2,28 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { getStoredContent } from '@/lib/cms-store';
 
 export const CustomCursor: React.FC = () => {
   const [position, setPosition] = useState({ x: -100, y: -100 });
   const [cursorText, setCursorText] = useState('');
   const [cursorVariant, setCursorVariant] = useState<'default' | 'hover' | 'course' | 'cta' | 'input'>('default');
   const [isVisible, setIsVisible] = useState(false);
+  const [cursorStyle, setCursorStyle] = useState<'radial' | 'normal'>('radial');
 
   useEffect(() => {
+    const updateCursorConfig = () => {
+      const content = getStoredContent();
+      const style = content.cursorStyle || 'radial';
+      setCursorStyle(style);
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-cursor-style', style);
+      }
+    };
+
+    updateCursorConfig();
+    window.addEventListener('sw_cms_updated', updateCursorConfig);
+
     // Only enable on desktop pointer devices
     if (window.matchMedia('(pointer: coarse)').matches) {
       return;
@@ -53,13 +67,14 @@ export const CustomCursor: React.FC = () => {
     document.body.addEventListener('mouseenter', onMouseEnter);
 
     return () => {
+      window.removeEventListener('sw_cms_updated', updateCursorConfig);
       window.removeEventListener('mousemove', onMouseMove);
       document.body.removeEventListener('mouseleave', onMouseLeave);
       document.body.removeEventListener('mouseenter', onMouseEnter);
     };
   }, []);
 
-  if (!isVisible) return null;
+  if (cursorStyle === 'normal' || !isVisible) return null;
 
   const getDimension = () => {
     if (cursorText) return 80;

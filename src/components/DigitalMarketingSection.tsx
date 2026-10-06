@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, Share2, TrendingUp, Award, Rocket } from 'lucide-react';
+import { SiteContent } from '@/lib/types';
 
 const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -18,7 +19,7 @@ const FacebookIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' 
   </svg>
 );
 
-export const DigitalMarketingSection: React.FC = () => {
+export const DigitalMarketingSection: React.FC<{ content?: SiteContent }> = ({ content }) => {
   const tags = [
     { label: 'Instagram Growth', color: '#F20D63', textColor: '#FFFFFF', icon: InstagramIcon, pos: 'top-4 left-4 sm:-left-8' },
     { label: 'Facebook Ads', color: '#1749C6', textColor: '#FFFFFF', icon: FacebookIcon, pos: 'top-12 right-2 sm:-right-8' },

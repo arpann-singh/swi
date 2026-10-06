@@ -20,6 +20,7 @@ import {
   getStoredContent,
   getStoredCourses,
   getStoredGallery,
+  applySiteTheme,
 } from '@/lib/cms-store';
 
 export default function Home() {
@@ -29,11 +30,47 @@ export default function Home() {
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
 
   useEffect(() => {
-    // Refresh content from local storage or remote
-    setContent(getStoredContent());
-    setCourses(getStoredCourses());
-    setGallery(getStoredGallery());
+    const refreshStore = () => {
+      const updatedContent = getStoredContent();
+      setContent(updatedContent);
+      setCourses(getStoredCourses());
+      setGallery(getStoredGallery());
+      applySiteTheme(updatedContent);
+    };
+
+    refreshStore();
+    window.addEventListener('sw_cms_updated', refreshStore);
+    return () => window.removeEventListener('sw_cms_updated', refreshStore);
   }, []);
+
+  const renderSectionComponent = (secId: string) => {
+    switch (secId) {
+      case 'hero':
+        return <Hero content={content} onOpenEnquiry={() => setIsEnquiryOpen(true)} />;
+      case 'about':
+        return <AboutSection content={content} />;
+      case 'programs':
+        return <CoursesSection courses={courses} onOpenEnquiry={() => setIsEnquiryOpen(true)} />;
+      case 'digital-marketing':
+        return <DigitalMarketingSection content={content} />;
+      case 'why-sw':
+        return <WhySWSection content={content} />;
+      case 'gallery':
+        return <MadeAtSWGallery galleryItems={gallery} />;
+      case 'experience':
+        return <ExperienceTimeline />;
+      case 'eligibility':
+        return <WhoCanApplySection />;
+      case 'admissions':
+        return <AdmissionsSection onOpenEnquiry={() => setIsEnquiryOpen(true)} />;
+      case 'contact':
+        return <ContactSection content={content} onOpenEnquiry={() => setIsEnquiryOpen(true)} />;
+      default:
+        return null;
+    }
+  };
+
+  const visibleSections = (content.sectionOrder || []).filter((sec) => sec.visible);
 
   return (
     <main className="min-h-screen bg-[#F8F7F3] text-[#0B0B0D] selection:bg-[#F20D63] selection:text-white">
@@ -43,61 +80,17 @@ export default function Home() {
       {/* Floating Pill Navbar */}
       <Navbar onOpenEnquiry={() => setIsEnquiryOpen(true)} />
 
-      {/* 1. HERO SECTION */}
-      <Hero content={content} onOpenEnquiry={() => setIsEnquiryOpen(true)} />
+      {/* Dynamic Order & Section Rendering */}
+      {visibleSections.map((sec, idx) => (
+        <React.Fragment key={sec.id}>
+          {renderSectionComponent(sec.id)}
+          {sec.dividerLabel && idx < visibleSections.length - 1 && (
+            <SectionDivider label={sec.dividerLabel} />
+          )}
+        </React.Fragment>
+      ))}
 
-      <SectionDivider label="WHO WE ARE • OUR PHILOSOPHY" />
-
-      {/* 2. ABOUT SECTION */}
-      <AboutSection content={content} />
-
-      <SectionDivider label="THE CREATIVE PATH • PROGRAMS" />
-
-      {/* 3. COURSES SECTION */}
-      <CoursesSection
-        courses={courses}
-        onOpenEnquiry={() => setIsEnquiryOpen(true)}
-      />
-
-      <SectionDivider label="EXCLUSIVE • DIGITAL MARKETING INCLUDED" />
-
-      {/* 4. DIGITAL MARKETING INCLUDED FEATURE */}
-      <DigitalMarketingSection />
-
-      <SectionDivider label="THE SW ADVANTAGE • WHY CHOOSE US" />
-
-      {/* 5. WHY CHOOSE SW INSTITUTE */}
-      <WhySWSection />
-
-      <SectionDivider label="MADE AT SW • STUDENT SHOWCASE" />
-
-      {/* 6. MADE AT SW GALLERY */}
-      <MadeAtSWGallery galleryItems={gallery} />
-
-      <SectionDivider label="THE SW EXPERIENCE • 6-STAGE JOURNEY" />
-
-      {/* 7. THE SW EXPERIENCE TIMELINE */}
-      <ExperienceTimeline />
-
-      <SectionDivider label="ELIGIBILITY • WHO CAN JOIN" />
-
-      {/* 8. WHO CAN APPLY? */}
-      <WhoCanApplySection />
-
-      <SectionDivider label="STUDIO ENQUIRY • START YOUR JOURNEY" />
-
-      {/* 9. STUDIO ENQUIRY CTA */}
-      <AdmissionsSection onOpenEnquiry={() => setIsEnquiryOpen(true)} />
-
-      <SectionDivider label="VISIT OUR CAMPUS • BHILAI" />
-
-      {/* 10. CONTACT & MAP */}
-      <ContactSection
-        content={content}
-        onOpenEnquiry={() => setIsEnquiryOpen(true)}
-      />
-
-      {/* 11. FOOTER */}
+      {/* Footer */}
       <Footer />
 
       {/* QUICK STUDIO ENQUIRY MODAL */}

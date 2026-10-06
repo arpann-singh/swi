@@ -7,6 +7,7 @@ interface SWLogoProps {
   variant?: 'dark' | 'light' | 'pink';
   className?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  customLogoUrl?: string;
 }
 
 export const SWLogo: React.FC<SWLogoProps> = ({
@@ -14,6 +15,7 @@ export const SWLogo: React.FC<SWLogoProps> = ({
   variant = 'dark',
   className = '',
   size = 'md',
+  customLogoUrl,
 }) => {
   const getFill = () => {
     switch (variant) {
@@ -56,6 +58,19 @@ export const SWLogo: React.FC<SWLogoProps> = ({
   const fill = getFill();
   const subFill = getSubtextFill();
   const height = getHeight();
+
+  if (customLogoUrl) {
+    return (
+      <div className={`inline-flex items-center ${className}`}>
+        <img
+          src={customLogoUrl}
+          alt="SW Institute Studio Logo"
+          style={{ height: `${height}px` }}
+          className="w-auto max-w-full object-contain transition-transform duration-300 hover:scale-105"
+        />
+      </div>
+    );
+  }
 
   if (layout === 'mark-only') {
     return (

@@ -34,14 +34,72 @@ export interface Enquiry {
   status: 'New' | 'Contacted' | 'Enrolled' | 'Archived';
 }
 
+export interface SectionConfig {
+  id: string;
+  label: string;
+  visible: boolean;
+  dividerLabel: string;
+}
+
+export interface ColorTheme {
+  preset: 'signature' | 'haute-couture' | 'electric-creative' | 'minimal-luxury' | 'warm-editorial' | 'custom';
+  primaryAccent: string;
+  secondaryAccent: string;
+  tertiaryAccent: string;
+  background: string;
+  foreground: string;
+}
+
+export interface SiteLogos {
+  headerLogo?: string;
+  mobileHeaderLogo?: string;
+  footerLogo?: string;
+  adminLogo?: string;
+  brandSymbol?: string;
+}
+
 export interface SiteContent {
+  // Global Appearance & Studio Engine
+  cursorStyle: 'radial' | 'normal';
+  themeMode: 'light' | 'dark' | 'auto';
+  colorTheme: ColorTheme;
+  logos: SiteLogos;
+  sectionOrder: SectionConfig[];
+
+  // Hero Section
   heroHeading: string;
   heroSubheading: string;
   tagline: string;
   announcement: string;
+  heroTag1: string;
+  heroTag2: string;
+  heroTag3: string;
+  heroImage1: string;
+  heroImage2: string;
+
+  // About Section
   aboutTitle: string;
   aboutHeadline: string;
   aboutStory: string;
+  stat1Label: string;
+  stat1Val: string;
+  stat2Label: string;
+  stat2Val: string;
+
+  // Programs Section
+  programsTitle: string;
+  programsSubheading: string;
+
+  // Digital Marketing Section
+  dmTitle: string;
+  dmHeadline: string;
+  dmDescription: string;
+
+  // Why SW Section
+  whySWTitle: string;
+  whySWHeadline: string;
+
+  // Contact Info & Admissions
   contactPhone: string;
   contactWhatsapp: string;
   contactEmail: string;
@@ -49,3 +107,4 @@ export interface SiteContent {
   admissionsOpen: boolean;
   academicYear: string;
 }
+

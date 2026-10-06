@@ -1,18 +1,25 @@
-'use client';
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SWLogo } from './SWLogo';
 import { ArrowUpRight, Lock } from 'lucide-react';
 import Link from 'next/link';
+import { getStoredContent } from '@/lib/cms-store';
 
 export const Footer: React.FC = () => {
+  const [content, setContent] = useState(getStoredContent());
+
+  useEffect(() => {
+    const handleUpdate = () => setContent(getStoredContent());
+    window.addEventListener('sw_cms_updated', handleUpdate);
+    return () => window.removeEventListener('sw_cms_updated', handleUpdate);
+  }, []);
+
   return (
     <footer className="bg-[#F8F7F3] text-[#0B0B0D] pt-16 pb-12 border-t border-[#0B0B0D]/15">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-[#0B0B0D]/15">
           {/* Brand & Slogan Column */}
           <div className="md:col-span-6 space-y-4">
-            <SWLogo layout="horizontal" variant="dark" size="md" />
+            <SWLogo layout="horizontal" variant="dark" size="md" customLogoUrl={content.logos?.footerLogo || content.logos?.headerLogo} />
             <p className="text-[#F20D63] font-mono text-sm font-black tracking-widest uppercase pt-2">
               LEARN. CREATE. GROW. LEAD YOUR WORLD.
             </p>
