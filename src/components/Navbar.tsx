@@ -16,7 +16,6 @@ import {
   Menu,
   X,
   Phone,
-  Layers,
   ChevronRight,
   Settings,
 } from 'lucide-react';
@@ -36,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 40);
 
-      // ScrollSpy: Detect current active section based on scroll position
+      // ScrollSpy: Detect active section
       const sections = ['hero', 'about', 'programs', 'digital-marketing', 'whysw', 'gallery', 'experience', 'contact'];
       const scrollPos = window.scrollY + 250;
 
@@ -75,8 +74,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
     { id: 'about', label: 'ABOUT', href: '#about' },
     { id: 'programs', label: 'PROGRAMS', href: '#programs' },
     { id: 'whysw', label: 'WHY SW', href: '#whysw' },
-    { id: 'gallery', label: 'STUDENT WORK', href: '#gallery' },
-    { id: 'experience', label: 'EXPERIENCE', href: '#experience' },
+    { id: 'gallery', label: 'WORK', href: '#gallery' },
+    { id: 'experience', label: 'JOURNEY', href: '#experience' },
     { id: 'contact', label: 'CONTACT', href: '#contact' },
   ];
 
@@ -85,7 +84,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
     { id: 'programs', label: 'COURSES', href: '#programs', icon: BookOpen },
     { id: 'whysw', label: 'WHY SW', href: '#whysw', icon: Award },
     { id: 'gallery', label: 'WORK', href: '#gallery', icon: Sparkles },
-    { id: 'contact', label: 'CONTACT', href: '#contact', icon: MapPin },
+    { id: 'contact', label: 'LOCATION', href: '#contact', icon: MapPin },
   ];
 
   const fullMobileMenuLinks = [
@@ -104,10 +103,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
   return (
     <>
       {/* ======================================================== */}
-      {/* 📱 MOBILE TOP HEADER BAR                                  */}
+      {/* 📱 MOBILE ULTRA-FROSTED TOP HEADER                       */}
       {/* ======================================================== */}
-      <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-5 py-3.5 bg-white/85 dark:bg-[#0B0B0D]/90 backdrop-blur-xl border-b border-neutral-200/80 dark:border-white/10 shadow-sm flex items-center justify-between transition-colors">
-        <a href="#" className="flex items-center gap-2.5">
+      <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-5 py-3.5 bg-white/40 dark:bg-black/40 backdrop-blur-3xl border-b border-white/50 dark:border-white/10 shadow-sm flex items-center justify-between transition-colors">
+        <a href="#" className="flex items-center gap-2">
           <SWLogo
             layout="horizontal"
             variant={isDarkMode ? 'light' : 'dark'}
@@ -118,33 +117,33 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
 
         <div className="flex items-center gap-2">
           {/* Status Badge */}
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold tracking-wider uppercase border border-emerald-500/20">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-mono font-bold tracking-wider uppercase border border-emerald-500/20 backdrop-blur-md">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
             <span>Admissions Open</span>
           </span>
 
-          {/* Light/Dark Toggle */}
+          {/* Theme Switcher */}
           <button
             onClick={toggleThemeMode}
             title="Toggle Theme"
-            className="p-2 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-white active:scale-90 transition-transform"
+            className="p-2 rounded-full bg-white/60 dark:bg-white/10 text-neutral-800 dark:text-white border border-white/40 dark:border-white/15 backdrop-blur-md active:scale-90 transition-all shadow-xs"
           >
             {isDarkMode ? <Sun className="w-4 h-4 text-[#FFB800]" /> : <Moon className="w-4 h-4 text-[#1749C6]" />}
           </button>
 
-          {/* Quick Enquire Button */}
+          {/* Enquire CTA */}
           <button
             onClick={onOpenEnquiry}
-            className="px-3.5 py-1.5 rounded-full bg-[#F20D63] text-white font-black text-[11px] uppercase tracking-wider flex items-center gap-1 shadow-md shadow-pink-500/25 active:scale-95 transition-transform"
+            className="px-3.5 py-1.5 rounded-full bg-[#F20D63] text-white font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-lg shadow-pink-500/30 active:scale-95 transition-transform"
           >
             <span>ENQUIRE</span>
             <Send className="w-3 h-3" />
           </button>
 
-          {/* Full Menu Hamburger Toggle */}
+          {/* Drawer Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="p-2 rounded-full bg-neutral-900 text-white dark:bg-white dark:text-black active:scale-90 transition-transform ml-1"
+            className="p-2 rounded-full bg-[#0B0B0D] text-white dark:bg-white dark:text-black active:scale-90 transition-transform ml-1 shadow-md"
           >
             <Menu className="w-4 h-4" />
           </button>
@@ -152,21 +151,21 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       </header>
 
       {/* ======================================================== */}
-      {/* 💻 DESKTOP FLOATING FROSTED GLASS NAVIGATION BAR        */}
+      {/* 💻 DESKTOP ULTRA-FROSTED LUXURY NAVIGATION BAR          */}
       {/* ======================================================== */}
       <header className="hidden lg:flex fixed top-5 left-0 right-0 z-40 px-8 justify-center pointer-events-none">
         <motion.nav
-          initial={{ y: -60, opacity: 0 }}
+          initial={{ y: -70, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className={`pointer-events-auto flex items-center justify-between w-full max-w-6xl px-7 py-3 rounded-full transition-all duration-500 bg-white/85 dark:bg-[#121215]/90 backdrop-blur-2xl border ${
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className={`pointer-events-auto flex items-center justify-between w-full max-w-6xl px-6 py-2.5 rounded-full transition-all duration-500 ${
             scrolled
-              ? 'border-neutral-300/90 dark:border-white/20 shadow-2xl shadow-black/15 scale-[0.99]'
-              : 'border-white/80 dark:border-white/10 shadow-xl shadow-black/5'
+              ? 'bg-white/60 dark:bg-[#0B0B0D]/70 backdrop-blur-3xl border border-white/60 dark:border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,0.8)] dark:shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_1px_rgba(255,255,255,0.15)] scale-[0.99]'
+              : 'bg-white/50 dark:bg-[#0B0B0D]/50 backdrop-blur-2xl border border-white/40 dark:border-white/10 shadow-[0_10px_30px_rgba(0,0,0,0.06)]'
           } text-neutral-900 dark:text-white`}
         >
-          {/* Left Brand Logo */}
-          <a href="#" className="flex items-center gap-3 group">
+          {/* Logo */}
+          <a href="#" className="flex items-center gap-3 group pl-2">
             <SWLogo
               layout="horizontal"
               variant={isDarkMode ? 'light' : 'dark'}
@@ -175,27 +174,28 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             />
           </a>
 
-          {/* Middle Nav Items with Smooth ScrollSpy Indicator */}
-          <div className="flex items-center gap-1.5 p-1 rounded-full bg-neutral-100/80 dark:bg-white/5 border border-neutral-200/60 dark:border-white/10">
+          {/* Aesthetic Section Buttons Container */}
+          <div className="flex items-center gap-1 p-1 rounded-full bg-neutral-200/40 dark:bg-white/5 border border-white/50 dark:border-white/10 backdrop-blur-xl shadow-inner">
             {desktopNavLinks.map((link) => {
               const isActive = activeSection === link.id;
               return (
                 <a
                   key={link.id}
                   href={link.href}
-                  className={`relative px-4 py-1.5 rounded-full text-[11px] font-mono font-bold tracking-widest uppercase transition-all duration-300 ${
+                  className={`relative px-4 py-2 rounded-full text-xs font-mono font-bold tracking-widest uppercase transition-all duration-300 flex items-center gap-1.5 ${
                     isActive
                       ? 'text-white dark:text-black font-black'
-                      : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                      : 'text-neutral-700 dark:text-neutral-300 hover:text-[#0B0B0D] dark:hover:text-white hover:bg-white/60 dark:hover:bg-white/10'
                   }`}
                 >
                   {isActive && (
                     <motion.div
-                      layoutId="desktopActiveNavTab"
-                      className="absolute inset-0 bg-[#0B0B0D] dark:bg-white rounded-full shadow-md"
-                      transition={{ type: 'spring', stiffness: 450, damping: 35 }}
+                      layoutId="desktopActiveSectionPill"
+                      className="absolute inset-0 bg-[#0B0B0D] dark:bg-white rounded-full shadow-lg"
+                      transition={{ type: 'spring', stiffness: 450, damping: 32 }}
                     />
                   )}
+                  {isActive && <span className="relative z-10 w-1.5 h-1.5 rounded-full bg-[#F20D63] animate-pulse" />}
                   <span className="relative z-10">{link.label}</span>
                 </a>
               );
@@ -203,43 +203,43 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
           </div>
 
           {/* Right Action Bar */}
-          <div className="flex items-center gap-3">
-            {/* Theme Toggle */}
+          <div className="flex items-center gap-2.5 pr-1">
+            {/* Theme Toggle Button */}
             <button
               onClick={toggleThemeMode}
               title="Toggle Light / Dark Mode"
-              className="p-2.5 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer border border-neutral-200 dark:border-white/10"
+              className="p-2.5 rounded-full bg-white/60 dark:bg-white/10 text-neutral-800 dark:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer border border-white/50 dark:border-white/15 backdrop-blur-md shadow-xs"
             >
               {isDarkMode ? <Sun className="w-4 h-4 text-[#FFB800]" /> : <Moon className="w-4 h-4 text-[#1749C6]" />}
             </button>
 
-            {/* Studio CMS Quick Portal Link */}
+            {/* Studio CMS Access Button */}
             <a
               href="/sw-studio"
               title="Master Admin CMS Portal"
-              className="p-2.5 rounded-full bg-neutral-100 dark:bg-white/10 text-neutral-800 dark:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer border border-neutral-200 dark:border-white/10"
+              className="p-2.5 rounded-full bg-white/60 dark:bg-white/10 text-neutral-800 dark:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer border border-white/50 dark:border-white/15 backdrop-blur-md shadow-xs"
             >
               <Settings className="w-4 h-4 text-[#F20D63]" />
             </a>
 
-            {/* Primary Enquire Button */}
+            {/* Professional Aesthetic ENQUIRE CTA Button */}
             <button
               onClick={onOpenEnquiry}
               data-cursor="ENQUIRE"
-              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black tracking-wider uppercase transition-all duration-300 bg-[#F20D63] text-white hover:bg-[#0B0B0D] hover:text-white hover:shadow-xl shadow-pink-500/25 active:scale-95 cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-black tracking-wider uppercase transition-all duration-300 bg-gradient-to-r from-[#F20D63] via-[#E00B5B] to-[#1749C6] text-white hover:shadow-xl shadow-pink-500/30 hover:scale-[1.03] active:scale-95 border border-white/30 cursor-pointer"
             >
               <span>ENQUIRE NOW</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <ArrowUpRight className="w-4 h-4" />
             </button>
           </div>
         </motion.nav>
       </header>
 
       {/* ======================================================== */}
-      {/* 📱 MOBILE BOTTOM FLOATING PILL NAVIGATION BAR            */}
+      {/* 📱 MOBILE ULTRA-FROSTED BOTTOM FLOATING PILL BAR          */}
       {/* ======================================================== */}
       <div className="fixed bottom-5 left-4 right-4 z-40 lg:hidden flex justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-sm bg-[#0B0B0D]/95 dark:bg-[#161618]/95 backdrop-blur-2xl text-white border border-white/20 shadow-2xl shadow-black/80 rounded-full p-2 flex items-center justify-between gap-1">
+        <div className="pointer-events-auto w-full max-w-sm bg-[#0B0B0D]/85 dark:bg-[#161618]/85 backdrop-blur-3xl text-white border border-white/25 shadow-[0_20px_50px_rgba(0,0,0,0.6)] rounded-full p-2 flex items-center justify-between gap-1">
           {mobilePillItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -254,9 +254,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               >
                 {isActive && (
                   <motion.div
-                    layoutId="mobileActivePillTab"
-                    className="absolute inset-0 bg-white/15 dark:bg-white/20 rounded-full"
-                    transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+                    layoutId="mobileActiveSectionPill"
+                    className="absolute inset-0 bg-white/20 dark:bg-white/25 rounded-full"
+                    transition={{ type: 'spring', stiffness: 450, damping: 30 }}
                   />
                 )}
                 <Icon className="w-4 h-4 mb-0.5 relative z-10" />
@@ -265,10 +265,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             );
           })}
 
-          {/* Quick Enquire CTA inside mobile pill */}
+          {/* Quick Enquire CTA Pill */}
           <button
             onClick={onOpenEnquiry}
-            className="flex items-center gap-1 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-[#F20D63] to-[#1749C6] text-white font-black text-[11px] uppercase tracking-wider shadow-md shadow-pink-500/40 active:scale-95 shrink-0"
+            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#F20D63] text-white font-black text-[11px] uppercase tracking-wider shadow-lg shadow-pink-500/40 active:scale-95 shrink-0"
           >
             <span>ENQUIRE</span>
             <Send className="w-3 h-3" />
@@ -277,7 +277,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       </div>
 
       {/* ======================================================== */}
-      {/* 📜 MOBILE FULL-SCREEN NAVIGATION DRAWER OVERLAY          */}
+      {/* 📜 MOBILE FULL-SCREEN MENU DRAWER OVERLAY                */}
       {/* ======================================================== */}
       <AnimatePresence>
         {mobileMenuOpen && (
@@ -285,9 +285,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-[#0B0B0D]/95 backdrop-blur-2xl text-white flex flex-col justify-between p-6 sm:p-10 lg:hidden overflow-y-auto"
+            className="fixed inset-0 z-50 bg-[#0B0B0D]/95 backdrop-blur-3xl text-white flex flex-col justify-between p-6 sm:p-10 lg:hidden overflow-y-auto"
           >
-            {/* Top Bar inside Overlay */}
+            {/* Top Bar inside Drawer */}
             <div className="flex items-center justify-between pb-6 border-b border-white/15">
               <SWLogo
                 layout="horizontal"
@@ -303,7 +303,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               </button>
             </div>
 
-            {/* Menu Links List */}
+            {/* Menu Links */}
             <div className="py-8 space-y-3">
               <p className="text-[10px] font-mono text-[#F20D63] uppercase tracking-widest font-black mb-4">
                 NAVIGATION MAP • SW INSTITUTE
@@ -327,14 +327,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               ))}
             </div>
 
-            {/* Bottom Actions & Contact Info */}
+            {/* Bottom Contact & Actions */}
             <div className="pt-6 border-t border-white/15 space-y-4">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onOpenEnquiry();
                 }}
-                className="w-full py-4 rounded-2xl bg-[#F20D63] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2 active:scale-98 transition-transform"
+                className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#F20D63] to-[#1749C6] text-white font-black text-sm uppercase tracking-widest shadow-xl shadow-pink-500/30 flex items-center justify-center gap-2 active:scale-98 transition-transform"
               >
                 <span>APPLY / ENQUIRE NOW</span>
                 <Send className="w-4 h-4" />
