@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SWLogo } from '@/components/SWLogo';
+import { uploadToImgBB } from '@/lib/imgbb';
 import {
   Lock,
   LayoutDashboard,
@@ -204,14 +205,28 @@ export default function SWStudioAdminPage() {
     saveStoredGallery(updated);
   };
 
-  // File Upload Handler for Custom Logos
-  const handleLogoFileUpload = (
+  // File Upload Handler for Custom Logos with ImgBB API Integration
+  const handleLogoFileUpload = async (
     field: keyof SiteLogos,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Upload to ImgBB CDN
+    const imgbbRes = await uploadToImgBB(file, siteContent.imgbbApiKey);
+    if (imgbbRes.success && imgbbRes.url) {
+      setSiteContent((prev) => ({
+        ...prev,
+        logos: {
+          ...prev.logos,
+          [field]: imgbbRes.url!,
+        },
+      }));
+      return;
+    }
+
+    // Local Base64 fallback if offline or no key
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;

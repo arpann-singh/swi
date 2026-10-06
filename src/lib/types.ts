@@ -58,7 +58,20 @@ export interface SiteLogos {
   brandSymbol?: string;
 }
 
+export interface FirebaseSettings {
+  apiKey?: string;
+  authDomain?: string;
+  projectId?: string;
+  storageBucket?: string;
+  messagingSenderId?: string;
+  appId?: string;
+}
+
 export interface SiteContent {
+  // Integrations & Cloud Config
+  imgbbApiKey?: string;
+  firebaseConfig?: FirebaseSettings;
+
   // Global Appearance & Studio Engine
   cursorStyle: 'radial' | 'normal';
   themeMode: 'light' | 'dark' | 'auto';

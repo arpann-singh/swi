@@ -16,12 +16,15 @@ import { ContactSection } from '@/components/ContactSection';
 import { Footer } from '@/components/Footer';
 import { SectionDivider } from '@/components/SectionDivider';
 import { EnquiryFormModal } from '@/components/EnquiryFormModal';
+import { SecretAdminModal } from '@/components/SecretAdminModal';
 import {
   getStoredContent,
   getStoredCourses,
   getStoredGallery,
   applySiteTheme,
+  saveStoredContent,
 } from '@/lib/cms-store';
+import { subscribeToFirebaseContent } from '@/lib/firebase';
 
 export default function Home() {
   const [content, setContent] = useState(getStoredContent());
@@ -39,8 +42,22 @@ export default function Home() {
     };
 
     refreshStore();
+
+    // Subscribe to Firebase Firestore live updates if Firebase config exists
+    const unsubscribeFirebase = subscribeToFirebaseContent((remoteContent) => {
+      if (remoteContent) {
+        saveStoredContent(remoteContent);
+        setContent(remoteContent);
+        applySiteTheme(remoteContent);
+      }
+    }, content.firebaseConfig);
+
     window.addEventListener('sw_cms_updated', refreshStore);
-    return () => window.removeEventListener('sw_cms_updated', refreshStore);
+
+    return () => {
+      window.removeEventListener('sw_cms_updated', refreshStore);
+      if (unsubscribeFirebase) unsubscribeFirebase();
+    };
   }, []);
 
   const renderSectionComponent = (secId: string) => {
@@ -73,31 +90,31 @@ export default function Home() {
   const visibleSections = (content.sectionOrder || []).filter((sec) => sec.visible);
 
   return (
-    <main className="min-h-screen bg-[#F8F7F3] text-[#0B0B0D] selection:bg-[#F20D63] selection:text-white">
-      {/* Custom Studio Cursor */}
+    <main className="min-h-screen bg-site-bg text-site-fg relative overflow-x-hidden selection:bg-[#F20D63] selection:text-white transition-colors duration-300">
+      {/* Custom Pointed Cursor Active All Over Website */}
       <CustomCursor />
 
-      {/* Floating Pill Navbar */}
+      {/* Discrete Passcode Modal for Secret Admin Access */}
+      <SecretAdminModal />
+
+      {/* Clean Navigation Bar - Zero Visible Studio CMS Traces */}
       <Navbar onOpenEnquiry={() => setIsEnquiryOpen(true)} />
 
-      {/* Dynamic Order & Section Rendering */}
+      {/* Dynamic Section Renderer */}
       {visibleSections.map((sec, idx) => (
         <React.Fragment key={sec.id}>
           {renderSectionComponent(sec.id)}
-          {sec.dividerLabel && idx < visibleSections.length - 1 && (
+          {idx < visibleSections.length - 1 && sec.dividerLabel && (
             <SectionDivider label={sec.dividerLabel} />
           )}
         </React.Fragment>
       ))}
 
-      {/* Footer */}
+      {/* Clean Footer */}
       <Footer />
 
-      {/* QUICK STUDIO ENQUIRY MODAL */}
-      <EnquiryFormModal
-        isOpen={isEnquiryOpen}
-        onClose={() => setIsEnquiryOpen(false)}
-      />
+      {/* Enquiry Form Modal */}
+      <EnquiryFormModal isOpen={isEnquiryOpen} onClose={() => setIsEnquiryOpen(false)} />
     </main>
   );
 }

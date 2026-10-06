@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { SWLogo } from './SWLogo';
-import { ArrowUpRight, Lock } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowUpRight } from 'lucide-react';
 import { getStoredContent } from '@/lib/cms-store';
 
 export const Footer: React.FC = () => {
   const [content, setContent] = useState(getStoredContent());
+  const [clickCount, setClickCount] = useState(0);
 
   useEffect(() => {
     const handleUpdate = () => setContent(getStoredContent());
@@ -13,13 +13,27 @@ export const Footer: React.FC = () => {
     return () => window.removeEventListener('sw_cms_updated', handleUpdate);
   }, []);
 
+  const handleSecretTripleClick = () => {
+    setClickCount((prev) => {
+      const next = prev + 1;
+      if (next >= 3) {
+        window.dispatchEvent(new Event('sw_open_studio_secret'));
+        return 0;
+      }
+      return next;
+    });
+    setTimeout(() => setClickCount(0), 1000);
+  };
+
   return (
     <footer className="bg-[#F8F7F3] text-[#0B0B0D] pt-16 pb-12 border-t border-[#0B0B0D]/15">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-[#0B0B0D]/15">
           {/* Brand & Slogan Column */}
           <div className="md:col-span-6 space-y-4">
-            <SWLogo layout="horizontal" variant="dark" size="md" customLogoUrl={content.logos?.footerLogo || content.logos?.headerLogo} />
+            <div onClick={handleSecretTripleClick} className="cursor-pointer inline-block">
+              <SWLogo layout="horizontal" variant="dark" size="md" customLogoUrl={content.logos?.footerLogo || content.logos?.headerLogo} />
+            </div>
             <p className="text-[#F20D63] font-mono text-sm font-black tracking-widest uppercase pt-2">
               LEARN. CREATE. GROW. LEAD YOUR WORLD.
             </p>
@@ -62,10 +76,10 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
 
-          {/* Social & Admin Portal Column */}
+          {/* Social Connect Column */}
           <div className="md:col-span-3 space-y-3 text-xs">
             <span className="block font-mono text-neutral-500 font-bold uppercase tracking-widest mb-2">
-              CONNECT & PORTAL
+              CONNECT
             </span>
             <ul className="space-y-2 font-bold text-neutral-800">
               <li>
@@ -101,23 +115,16 @@ export const Footer: React.FC = () => {
                   <ArrowUpRight className="w-3 h-3 text-[#25D366]" />
                 </a>
               </li>
-              <li className="pt-4 border-t border-[#0B0B0D]/10">
-                <Link
-                  href="/sw-studio"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0B0B0D] hover:bg-[#F20D63] text-white font-mono text-[11px] tracking-wider uppercase transition-colors shadow-md"
-                >
-                  <Lock className="w-3 h-3" />
-                  <span>MASTER CMS (/sw-studio)</span>
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
 
         {/* Copyright Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-600 gap-4 font-mono font-medium">
-          <span>© 2026 SW Institute of Design and Innovation. All rights reserved.</span>
-          <span>Designed with Vogue Editorial Light Theme Aesthetics</span>
+          <span onClick={handleSecretTripleClick} className="cursor-pointer">
+            © 2026 SW Institute of Design and Innovation. All rights reserved.
+          </span>
+          <span>Bhilai, Chhattisgarh • India</span>
         </div>
       </div>
     </footer>

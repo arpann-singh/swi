@@ -17,7 +17,6 @@ import {
   X,
   Phone,
   ChevronRight,
-  Settings,
 } from 'lucide-react';
 import { getStoredContent, saveStoredContent, applySiteTheme } from '@/lib/cms-store';
 
@@ -30,6 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
   const [activeSection, setActiveSection] = useState('hero');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [content, setContent] = useState(getStoredContent());
+  const [logoClicks, setLogoClicks] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -61,6 +61,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       window.removeEventListener('sw_cms_updated', handleUpdate);
     };
   }, []);
+
+  const handleLogoTripleTap = (e: React.MouseEvent) => {
+    setLogoClicks((prev) => {
+      const count = prev + 1;
+      if (count >= 3) {
+        window.dispatchEvent(new Event('sw_open_studio_secret'));
+        return 0;
+      }
+      return count;
+    });
+    setTimeout(() => setLogoClicks(0), 1000);
+  };
 
   const toggleThemeMode = () => {
     const currentMode = content.themeMode || 'light';
@@ -106,14 +118,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       {/* 📱 MOBILE LIGHT FROSTED LIQUID GLASS TOP HEADER          */}
       {/* ======================================================== */}
       <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-5 py-3.5 bg-white/90 backdrop-blur-2xl border-b border-neutral-200/80 shadow-xs flex items-center justify-between transition-colors">
-        <a href="#" className="flex items-center gap-2">
+        <button onClick={handleLogoTripleTap} className="flex items-center gap-2 text-left">
           <SWLogo
             layout="horizontal"
             variant="dark"
             size="sm"
             customLogoUrl={content.logos?.mobileHeaderLogo || content.logos?.headerLogo}
           />
-        </a>
+        </button>
 
         <div className="flex items-center gap-2">
           {/* Status Badge */}
@@ -152,7 +164,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
 
       {/* ======================================================== */}
       {/* 💻 DESKTOP LIGHT VERSION LIQUID GLASS 3D NAVBAR          */}
-      {/* Reference 1 Layout + Reference 2 Glossy 3D Beveled Finish */}
       {/* ======================================================== */}
       <header className="hidden lg:flex fixed top-5 left-0 right-0 z-40 px-8 justify-center pointer-events-none">
         <motion.nav
@@ -163,17 +174,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             scrolled ? 'scale-[0.99] shadow-[0_20px_50px_rgba(0,0,0,0.12)] border-neutral-300' : ''
           } text-[#0B0B0D]`}
         >
-          {/* Left Brand Logo (Dark Variant for Light Theme) */}
-          <a href="#" className="flex items-center gap-3 group pl-2">
+          {/* Left Brand Logo (Triple Tap Secret Trigger) */}
+          <button onClick={handleLogoTripleTap} className="flex items-center gap-3 group pl-2 text-left cursor-pointer">
             <SWLogo
               layout="horizontal"
               variant="dark"
               size="sm"
               customLogoUrl={content.logos?.headerLogo}
             />
-          </a>
+          </button>
 
-          {/* Middle Liquid Glass Track & Section Buttons (Exact match to Reference 1) */}
+          {/* Middle Liquid Glass Track & Section Buttons */}
           <div className="flex items-center gap-1 p-1.5 rounded-full bg-neutral-100/90 border border-neutral-200/80 backdrop-blur-xl shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)]">
             {desktopNavLinks.map((link) => {
               const isActive = activeSection === link.id;
@@ -203,7 +214,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             })}
           </div>
 
-          {/* Right Action Bar (Light Glass Buttons) */}
+          {/* Right Action Bar */}
           <div className="flex items-center gap-3 pr-1">
             {/* Theme Toggle Button */}
             <button
@@ -214,16 +225,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
               {isDarkMode ? <Sun className="w-4 h-4 text-[#FFB800]" /> : <Moon className="w-4 h-4 text-[#1749C6]" />}
             </button>
 
-            {/* Studio CMS Access Button */}
-            <a
-              href="/sw-studio"
-              title="Master Admin CMS Portal"
-              className="w-10 h-10 rounded-full bg-white border border-neutral-200/90 backdrop-blur-md flex items-center justify-center text-[#F20D63] hover:bg-neutral-100 hover:scale-105 active:scale-95 shadow-[0_4px_10px_rgba(0,0,0,0.05),inset_0_1px_1px_rgba(255,255,255,1)] transition-all cursor-pointer"
-            >
-              <Settings className="w-4 h-4" />
-            </a>
-
-            {/* Light Version Vibrant Magenta ENQUIRE NOW Button (Exact match to Reference 1 + 2) */}
+            {/* Light Version Vibrant Magenta ENQUIRE NOW Button */}
             <button
               onClick={onOpenEnquiry}
               data-cursor="ENQUIRE"
@@ -290,12 +292,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
           >
             {/* Top Bar inside Drawer */}
             <div className="flex items-center justify-between pb-6 border-b border-neutral-200">
-              <SWLogo
-                layout="horizontal"
-                variant="dark"
-                size="sm"
-                customLogoUrl={content.logos?.mobileHeaderLogo || content.logos?.headerLogo}
-              />
+              <button onClick={handleLogoTripleTap} className="flex items-center gap-2 text-left">
+                <SWLogo
+                  layout="horizontal"
+                  variant="dark"
+                  size="sm"
+                  customLogoUrl={content.logos?.mobileHeaderLogo || content.logos?.headerLogo}
+                />
+              </button>
               <button
                 onClick={() => setMobileMenuOpen(false)}
                 className="w-10 h-10 rounded-full bg-neutral-100 text-[#0B0B0D] border border-neutral-200 flex items-center justify-center hover:bg-neutral-200 active:scale-90 transition-all"
@@ -346,10 +350,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
                   <Phone className="w-3.5 h-3.5 text-[#1749C6]" />
                   <span>+91 91113 33966</span>
                 </a>
-                <a href="/sw-studio" className="flex items-center gap-1 text-[#1749C6] font-bold">
-                  <Settings className="w-3.5 h-3.5 text-[#F20D63]" />
-                  <span>Studio CMS</span>
-                </a>
+                <span onClick={handleLogoTripleTap} className="text-neutral-400 text-[10px] uppercase font-mono cursor-pointer">
+                  BHILAI CAMPUS
+                </span>
               </div>
             </div>
           </motion.div>

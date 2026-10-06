@@ -1,4 +1,5 @@
 import { Course, GalleryItem, Enquiry, SiteContent, SectionConfig, ColorTheme } from './types';
+import { saveContentToFirebase, saveEnquiryToFirebase } from './firebase';
 
 export const COLOR_THEME_PRESETS: Record<ColorTheme['preset'], ColorTheme> = {
   signature: {
@@ -323,6 +324,8 @@ export const saveStoredContent = (content: SiteContent) => {
     localStorage.setItem('sw_site_content', JSON.stringify(content));
     applySiteTheme(content);
     window.dispatchEvent(new Event('sw_cms_updated'));
+    // Fire-and-forget Firebase sync
+    saveContentToFirebase(content, content.firebaseConfig);
   }
 };
 
@@ -379,6 +382,7 @@ export const saveStoredEnquiries = (enquiries: Enquiry[]) => {
 
 export const addEnquiry = (newEnquiry: Omit<Enquiry, 'id' | 'timestamp' | 'status'>): Enquiry => {
   const enquiries = getStoredEnquiries();
+  const content = getStoredContent();
   const created: Enquiry = {
     ...newEnquiry,
     id: `enq-${Date.now()}`,
@@ -390,6 +394,8 @@ export const addEnquiry = (newEnquiry: Omit<Enquiry, 'id' | 'timestamp' | 'statu
   };
   const updated = [created, ...enquiries];
   saveStoredEnquiries(updated);
+  // Fire-and-forget Firebase enquiry sync
+  saveEnquiryToFirebase(created, content.firebaseConfig);
   return created;
 };
 
