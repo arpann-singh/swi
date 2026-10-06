@@ -286,11 +286,9 @@ export const applySiteTheme = (content: SiteContent) => {
   const root = document.documentElement;
   const theme = content.colorTheme || COLOR_THEME_PRESETS.signature;
 
-  root.style.setProperty('--color-primary', theme.primaryAccent);
-  root.style.setProperty('--color-secondary', theme.secondaryAccent);
-  root.style.setProperty('--color-tertiary', theme.tertiaryAccent);
-  root.style.setProperty('--background', theme.background);
-  root.style.setProperty('--foreground', theme.foreground);
+  root.style.setProperty('--color-primary', theme.primaryAccent || '#F20D63');
+  root.style.setProperty('--color-secondary', theme.secondaryAccent || '#1749C6');
+  root.style.setProperty('--color-tertiary', theme.tertiaryAccent || '#FFB800');
 
   let effectiveMode = content.themeMode || 'light';
   if (effectiveMode === 'auto' && typeof window !== 'undefined') {
@@ -300,6 +298,24 @@ export const applySiteTheme = (content: SiteContent) => {
 
   root.setAttribute('data-theme', effectiveMode);
   root.setAttribute('data-cursor-style', content.cursorStyle || 'radial');
+
+  if (effectiveMode === 'dark') {
+    const isDarkCustom = theme.background && theme.background !== '#F8F7F3' && theme.background !== '#FAFAFA' && theme.background !== '#F5F2EB';
+    const bg = isDarkCustom ? theme.background : '#0B0B0D';
+    const fg = isDarkCustom ? theme.foreground : '#F8F7F3';
+
+    root.style.setProperty('--background', bg);
+    root.style.setProperty('--foreground', fg);
+    root.style.setProperty('--card-bg', '#141416');
+    root.style.setProperty('--card-border', 'rgba(255, 255, 255, 0.12)');
+    root.style.setProperty('--section-alt-bg', '#1A1A1E');
+  } else {
+    root.style.setProperty('--background', theme.background || '#F8F7F3');
+    root.style.setProperty('--foreground', theme.foreground || '#0B0B0D');
+    root.style.setProperty('--card-bg', '#FFFFFF');
+    root.style.setProperty('--card-border', 'rgba(11, 11, 13, 0.08)');
+    root.style.setProperty('--section-alt-bg', '#F2F1EC');
+  }
 };
 
 export const saveStoredContent = (content: SiteContent) => {

@@ -80,7 +80,7 @@ export const DigitalMarketingSection: React.FC<{ content?: SiteContent }> = ({ c
         </motion.svg>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10 text-center">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 relative z-10 text-center">
         {/* Top Tagline */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -111,7 +111,7 @@ export const DigitalMarketingSection: React.FC<{ content?: SiteContent }> = ({ c
         </p>
 
         {/* Floating Tags Around Workspace Composition */}
-        <div className="relative max-w-4xl mx-auto mt-16 px-4">
+        <div className="relative max-w-4xl mx-auto mt-16 px-6 sm:px-8 md:px-10 lg:px-12">
           <div className="relative rounded-3xl overflow-hidden border-4 border-white shadow-2xl bg-white group">
             <img
               src="/images/digital_marketing_laptop.jpg"

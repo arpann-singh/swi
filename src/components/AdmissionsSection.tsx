@@ -15,7 +15,7 @@ export const AdmissionsSection: React.FC<AdmissionsSectionProps> = ({ onOpenEnqu
       <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-[#F20D63]/15 blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[30rem] h-[30rem] bg-[#1749C6]/15 blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 relative z-10">
         <div className="relative rounded-3xl bg-[#0B0B0D] text-white p-8 sm:p-14 md:p-20 overflow-hidden shadow-2xl border-4 border-white/20">
           {/* Inner Decorative Background Image Overlay */}
           <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-luminosity">

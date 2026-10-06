@@ -17,7 +17,7 @@ export const WhoCanApplySection: React.FC = () => {
       {/* Background Decorative Graphic */}
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-[#F20D63]/10 blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 relative z-10">
         <div className="bg-white border-2 border-neutral-200 rounded-3xl p-8 md:p-12 shadow-2xl">
           <div className="text-center max-w-3xl mx-auto mb-12">
             <div className="inline-flex items-center gap-2 text-xs font-mono text-[#F20D63] tracking-widest uppercase mb-3 font-bold">

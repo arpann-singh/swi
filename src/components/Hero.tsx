@@ -34,7 +34,7 @@ export const Hero: React.FC<HeroProps> = ({ content, onOpenEnquiry }) => {
   ];
 
   return (
-    <section className="relative min-h-screen bg-[#F8F7F3] text-[#0B0B0D] overflow-hidden pt-20 sm:pt-28 pb-24 sm:pb-16 px-4 md:px-8 flex flex-col justify-between selection:bg-[#F20D63] selection:text-white">
+    <section className="relative min-h-screen bg-[#F8F7F3] text-[#0B0B0D] overflow-hidden pt-20 sm:pt-28 pb-24 sm:pb-16 px-6 sm:px-8 md:px-10 lg:px-12 flex flex-col justify-between selection:bg-[#F20D63] selection:text-white">
       {/* Dynamic Animated Background Gradients & Floating Particles */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {/* Subtle Architectural Dot Grid */}

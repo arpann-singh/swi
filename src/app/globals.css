@@ -1,8 +1,22 @@
 @import "tailwindcss";
 
 :root {
+  --color-primary: #F20D63;
+  --color-secondary: #1749C6;
+  --color-tertiary: #FFB800;
   --background: #F8F7F3;
   --foreground: #0B0B0D;
+  --card-bg: #FFFFFF;
+  --card-border: rgba(11, 11, 13, 0.08);
+  --section-alt-bg: #F2F1EC;
+}
+
+html[data-theme="dark"] {
+  --background: #0B0B0D !important;
+  --foreground: #F8F7F3 !important;
+  --card-bg: #141416 !important;
+  --card-border: rgba(255, 255, 255, 0.12) !important;
+  --section-alt-bg: #1A1A1E !important;
 }
 
 @theme inline {
@@ -13,9 +27,90 @@
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* DYNAMIC ACCENT COLOR UTILITIES */
+.bg-theme-primary {
+  background-color: var(--color-primary) !important;
+}
+
+.text-theme-primary {
+  color: var(--color-primary) !important;
+}
+
+.border-theme-primary {
+  border-color: var(--color-primary) !important;
+}
+
+.bg-theme-secondary {
+  background-color: var(--color-secondary) !important;
+}
+
+.text-theme-secondary {
+  color: var(--color-secondary) !important;
+}
+
+.bg-theme-tertiary {
+  background-color: var(--color-tertiary) !important;
+}
+
+.text-theme-tertiary {
+  color: var(--color-tertiary) !important;
+}
+
+/* AUTOMATIC DARK MODE STYLING OVERRIDES */
+html[data-theme="dark"] section {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+html[data-theme="dark"] .bg-\[\#F8F7F3\],
+html[data-theme="dark"] .bg-\[\#f8f7f3\] {
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+html[data-theme="dark"] .bg-white {
+  background-color: var(--card-bg) !important;
+  color: var(--foreground) !important;
+}
+
+html[data-theme="dark"] .text-\[\#0B0B0D\],
+html[data-theme="dark"] .text-\[\#0b0b0d\] {
+  color: var(--foreground) !important;
+}
+
+html[data-theme="dark"] .text-neutral-900,
+html[data-theme="dark"] .text-neutral-800,
+html[data-theme="dark"] .text-neutral-700 {
+  color: #E4E4E7 !important;
+}
+
+html[data-theme="dark"] .text-neutral-600,
+html[data-theme="dark"] .text-neutral-500 {
+  color: #A1A1AA !important;
+}
+
+html[data-theme="dark"] .border-neutral-200,
+html[data-theme="dark"] .border-neutral-300 {
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+
+html[data-theme="dark"] .bg-neutral-100,
+html[data-theme="dark"] .bg-neutral-200 {
+  background-color: #27272A !important;
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select {
+  background-color: #1A1A1E !important;
+  color: #F8F7F3 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
 }
 
 /* Custom radial cursor styling for desktop pointer devices */

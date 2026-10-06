@@ -57,7 +57,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ content, onOpenE
       {/* Background Graphic Grid */}
       <div className="absolute inset-0 pointer-events-none opacity-10 bg-[radial-gradient(#0B0B0D_1px,transparent_1px)] [background-size:32px_32px]" />
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 md:px-10 lg:px-12 relative z-10">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16 border-b border-[#0B0B0D]/15 pb-8">
           <div>
