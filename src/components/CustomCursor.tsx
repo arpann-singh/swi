@@ -7,8 +7,9 @@ import { getStoredContent } from '@/lib/cms-store';
 export const CustomCursor: React.FC = () => {
   const [position, setPosition] = useState({ x: -100, y: -100 });
   const [cursorText, setCursorText] = useState('');
-  const [cursorVariant, setCursorVariant] = useState<'default' | 'hover' | 'course' | 'cta' | 'input'>('default');
+  const [cursorVariant, setCursorVariant] = useState<'default' | 'hover' | 'cta' | 'input'>('default');
   const [isVisible, setIsVisible] = useState(false);
+  const [isMouseDown, setIsMouseDown] = useState(false);
   const [cursorStyle, setCursorStyle] = useState<'radial' | 'normal'>('radial');
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export const CustomCursor: React.FC = () => {
     updateCursorConfig();
     window.addEventListener('sw_cms_updated', updateCursorConfig);
 
-    // Only enable on desktop pointer devices
+    // Disable custom cursor on touch screens
     if (window.matchMedia('(pointer: coarse)').matches) {
       return;
     }
@@ -40,17 +41,14 @@ export const CustomCursor: React.FC = () => {
       const cursorAttr = target.closest('[data-cursor]')?.getAttribute('data-cursor');
       if (cursorAttr) {
         setCursorText(cursorAttr);
-        if (cursorAttr.includes('EXPLORE')) setCursorVariant('course');
-        else if (cursorAttr.includes('VIEW')) setCursorVariant('hover');
-        else if (cursorAttr.includes('APPLY') || cursorAttr.includes('ENQUIRE')) setCursorVariant('cta');
-        else setCursorVariant('hover');
+        setCursorVariant('cta');
         return;
       }
 
-      if (target.closest('input[type="text"], input[type="tel"], input[type="email"], input[type="number"], textarea')) {
+      if (target.closest('input, textarea, select')) {
         setCursorText('');
         setCursorVariant('input');
-      } else if (target.closest('a, button, select, [role="button"]')) {
+      } else if (target.closest('a, button, [role="button"], .cursor-pointer')) {
         setCursorText('');
         setCursorVariant('hover');
       } else {
@@ -59,16 +57,22 @@ export const CustomCursor: React.FC = () => {
       }
     };
 
+    const onMouseDown = () => setIsMouseDown(true);
+    const onMouseUp = () => setIsMouseDown(false);
     const onMouseLeave = () => setIsVisible(false);
     const onMouseEnter = () => setIsVisible(true);
 
     window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mouseup', onMouseUp);
     document.body.addEventListener('mouseleave', onMouseLeave);
     document.body.addEventListener('mouseenter', onMouseEnter);
 
     return () => {
       window.removeEventListener('sw_cms_updated', updateCursorConfig);
       window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mouseup', onMouseUp);
       document.body.removeEventListener('mouseleave', onMouseLeave);
       document.body.removeEventListener('mouseenter', onMouseEnter);
     };
@@ -76,46 +80,66 @@ export const CustomCursor: React.FC = () => {
 
   if (cursorStyle === 'normal' || !isVisible) return null;
 
-  const getDimension = () => {
-    if (cursorText) return 80;
-    if (cursorVariant === 'hover') return 48;
-    if (cursorVariant === 'input') return 36;
-    return 36; // 36px radial blur ring
-  };
-
-  const dim = getDimension();
+  const isHovered = cursorVariant !== 'default';
+  const haloSize = cursorText ? 84 : isHovered ? 44 : 28;
 
   return (
-    <motion.div
-      className="pointer-events-none fixed top-0 left-0 z-[99999] flex items-center justify-center font-bold tracking-wider text-xs uppercase"
-      animate={{
-        x: position.x - dim / 2,
-        y: position.y - dim / 2,
-        scale: 1,
-      }}
-      transition={{ type: 'spring', stiffness: 600, damping: 30, mass: 0.15 }}
-    >
-      <div
-        style={{
-          width: `${dim}px`,
-          height: `${dim}px`,
+    <>
+      {/* 1. Precision Pointed Studio Arrowhead Tip */}
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[99999]"
+        animate={{
+          x: position.x,
+          y: position.y,
+          scale: isMouseDown ? 0.8 : isHovered ? 1.25 : 1,
+          rotate: isHovered ? -12 : 0,
         }}
-        className={`flex items-center justify-center transition-all duration-200 rounded-full ${
-          cursorText
-            ? 'bg-[#F20D63] text-white shadow-2xl border border-white/40 backdrop-blur-md font-black'
-            : cursorVariant === 'input'
-            ? 'bg-[#F20D63]/15 border-2 border-[#F20D63] backdrop-blur-md shadow-xl backdrop-contrast-125 scale-105'
-            : cursorVariant === 'hover'
-            ? 'bg-[#1749C6]/20 border-2 border-[#1749C6] backdrop-blur-sm backdrop-contrast-125 shadow-lg'
-            : 'bg-[#F20D63]/10 border-2 border-[#F20D63]/60 shadow-xl backdrop-blur-md backdrop-contrast-125 backdrop-brightness-105'
-        }`}
+        transition={{ type: 'spring', stiffness: 1200, damping: 45, mass: 0.08 }}
       >
-        {cursorText ? (
-          <span className="text-[10px] text-center px-1 font-sans tracking-widest">{cursorText}</span>
-        ) : cursorVariant === 'input' ? (
-          <div className="w-[2.5px] h-4 bg-[#F20D63] animate-pulse rounded-full shadow-md" />
-        ) : null}
-      </div>
-    </motion.div>
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none" className="drop-shadow-lg">
+          <defs>
+            <linearGradient id="swPointedCursorGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#F20D63" />
+              <stop offset="50%" stopColor="#1749C6" />
+              <stop offset="100%" stopColor="#FFB800" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M3 3L11 23L15 15L23 11L3 3Z"
+            fill="url(#swPointedCursorGradient)"
+            stroke="#FFFFFF"
+            strokeWidth="1.8"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+      </motion.div>
+
+      {/* 2. Smooth Trailing Halo Ring / Dynamic Label Badge */}
+      <motion.div
+        className="pointer-events-none fixed top-0 left-0 z-[99998] flex items-center justify-center"
+        animate={{
+          x: position.x - haloSize / 2,
+          y: position.y - haloSize / 2,
+          scale: isMouseDown ? 0.75 : 1,
+        }}
+        transition={{ type: 'spring', stiffness: 350, damping: 25, mass: 0.18 }}
+      >
+        <div
+          style={{ width: `${haloSize}px`, height: `${haloSize}px` }}
+          className={`rounded-full transition-all duration-200 flex items-center justify-center ${
+            cursorText
+              ? 'bg-[#F20D63] text-white shadow-2xl border border-white/40 backdrop-blur-md px-3 font-mono text-[10px] font-black tracking-widest'
+              : cursorVariant === 'input'
+              ? 'border-2 border-[#F20D63] bg-[#F20D63]/15 backdrop-blur-xs shadow-md'
+              : cursorVariant === 'hover'
+              ? 'border-2 border-[#1749C6] bg-[#1749C6]/20 backdrop-blur-xs shadow-md'
+              : 'border border-[#F20D63]/40 bg-[#F20D63]/5 backdrop-blur-xs'
+          }`}
+        >
+          {cursorText && <span className="uppercase text-center leading-none">{cursorText}</span>}
+        </div>
+      </motion.div>
+    </>
   );
 };
