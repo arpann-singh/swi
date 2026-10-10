@@ -31,7 +31,7 @@ export interface Enquiry {
   course: 'Fashion Design' | 'Interior Design' | 'Both / Not Sure';
   message?: string;
   timestamp: string;
-  status: 'New' | 'Contacted' | 'Enrolled' | 'Archived';
+  status: 'New' | 'Contacted' | 'Enrolled' | 'Archived' | 'Closed';
 }
 
 export interface SectionConfig {

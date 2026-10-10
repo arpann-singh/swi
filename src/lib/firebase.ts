@@ -4,6 +4,7 @@ import {
   doc,
   getDoc,
   setDoc,
+  deleteDoc,
   onSnapshot,
   collection,
   addDoc,
@@ -112,21 +113,110 @@ export const subscribeToFirebaseContent = (
 };
 
 /**
- * Save Student Enquiry directly to Firestore collection `enquiries`
+ * Save Student Enquiry directly to Firestore collection `enquiries` with deterministic ID
  */
 export const saveEnquiryToFirebase = async (enquiry: Enquiry, config?: FirebaseSettings): Promise<boolean> => {
   const { db } = initFirebase(config);
   if (!db) return false;
 
   try {
-    const colRef = collection(db, 'enquiries');
-    await addDoc(colRef, {
-      ...enquiry,
-      createdAt: new Date().toISOString(),
-    });
+    const docRef = doc(db, 'enquiries', enquiry.id);
+    await setDoc(
+      docRef,
+      {
+        ...enquiry,
+        createdAt: enquiry.timestamp || new Date().toISOString(),
+      },
+      { merge: true }
+    );
     return true;
   } catch (error) {
     console.error('Error saving enquiry to Firebase:', error);
+    return false;
+  }
+};
+
+/**
+ * Subscribe to Live Realtime Enquiries from Firebase Firestore collection `enquiries`
+ */
+export const subscribeToFirebaseEnquiries = (
+  callback: (enquiries: Enquiry[]) => void,
+  config?: FirebaseSettings
+): (() => void) | null => {
+  const { db } = initFirebase(config);
+  if (!db) return null;
+
+  try {
+    const colRef = collection(db, 'enquiries');
+    return onSnapshot(colRef, (snapshot) => {
+      const list: Enquiry[] = [];
+      snapshot.forEach((docItem) => {
+        const data = docItem.data();
+        list.push({
+          id: docItem.id,
+          name: data.name || '',
+          phone: data.phone || '',
+          email: data.email || '',
+          age: data.age || '',
+          course: data.course || 'Both / Not Sure',
+          message: data.message || '',
+          timestamp: data.timestamp || data.createdAt || new Date().toISOString(),
+          status: data.status || 'New',
+        });
+      });
+
+      // Sort newest first
+      list.sort((a, b) => {
+        const timeA = new Date(a.timestamp).getTime() || 0;
+        const timeB = new Date(b.timestamp).getTime() || 0;
+        return timeB - timeA;
+      });
+
+      callback(list);
+    });
+  } catch (error) {
+    console.error('Error subscribing to Firebase enquiries:', error);
+    return null;
+  }
+};
+
+/**
+ * Update Enquiry Status in Firestore
+ */
+export const updateEnquiryStatusInFirebase = async (
+  enquiryId: string,
+  status: Enquiry['status'],
+  config?: FirebaseSettings
+): Promise<boolean> => {
+  const { db } = initFirebase(config);
+  if (!db) return false;
+
+  try {
+    const docRef = doc(db, 'enquiries', enquiryId);
+    await setDoc(docRef, { status }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Error updating enquiry status in Firebase:', error);
+    return false;
+  }
+};
+
+/**
+ * Delete Enquiry from Firestore
+ */
+export const deleteEnquiryFromFirebase = async (
+  enquiryId: string,
+  config?: FirebaseSettings
+): Promise<boolean> => {
+  const { db } = initFirebase(config);
+  if (!db) return false;
+
+  try {
+    const docRef = doc(db, 'enquiries', enquiryId);
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error('Error deleting enquiry from Firebase:', error);
     return false;
   }
 };

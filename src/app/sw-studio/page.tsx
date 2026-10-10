@@ -1,10 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SWLogo } from '@/components/SWLogo';
 import { uploadToImgBB, syncImageToImgBB } from '@/lib/imgbb';
-import { saveContentToFirebase, syncAllDataToFirebase } from '@/lib/firebase';
+import {
+  saveContentToFirebase,
+  syncAllDataToFirebase,
+  subscribeToFirebaseEnquiries,
+  updateEnquiryStatusInFirebase,
+  deleteEnquiryFromFirebase,
+} from '@/lib/firebase';
 import {
   Lock,
   LayoutDashboard,
@@ -25,6 +31,15 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Bell,
+  BellRing,
+  Volume2,
+  VolumeX,
+  PhoneCall,
+  Search,
+  Filter,
+  Phone,
+  Mail,
   Send,
   Sparkles,
   LogOut,
@@ -41,6 +56,11 @@ import {
   Check,
   Building2,
   Share2,
+  X,
+  Copy,
+  ExternalLink,
+  Clock,
+  UserCheck,
 } from 'lucide-react';
 import {
   SiteContent,
@@ -89,6 +109,125 @@ export default function SWStudioAdminPage() {
   const [courses, setCourses] = useState<Course[]>(getStoredCourses());
   const [gallery, setGallery] = useState<GalleryItem[]>(getStoredGallery());
   const [enquiries, setEnquiries] = useState<Enquiry[]>(getStoredEnquiries());
+
+  // Notification & Realtime Enquiry States
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [newEnquiryToast, setNewEnquiryToast] = useState<Enquiry | null>(null);
+  const [enquirySearch, setEnquirySearch] = useState('');
+  const [enquiryStatusFilter, setEnquiryStatusFilter] = useState<'All' | 'New' | 'Contacted' | 'Enrolled' | 'Closed'>('All');
+  const seenEnquiryIdsRef = useRef<Set<string>>(new Set());
+  const isInitialEnquiryLoadRef = useRef(true);
+
+  const playNotificationChime = () => {
+    if (typeof window === 'undefined') return;
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const now = ctx.currentTime;
+
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      osc1.type = 'sine';
+      osc1.frequency.setValueAtTime(587.33, now); // D5
+      osc1.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+
+      osc2.type = 'triangle';
+      osc2.frequency.setValueAtTime(880, now + 0.12);
+      osc2.frequency.exponentialRampToValueAtTime(1174.66, now + 0.35); // D6
+
+      gainNode.gain.setValueAtTime(0, now);
+      gainNode.gain.linearRampToValueAtTime(0.4, now + 0.05);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+
+      osc1.connect(gainNode);
+      osc2.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc1.start(now);
+      osc1.stop(now + 0.3);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.65);
+    } catch (e) {
+      console.warn('Audio chime error:', e);
+    }
+  };
+
+  const requestNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      alert('Browser web push notifications are not supported on this browser.');
+      return;
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      setNotificationPermission(perm);
+      if (perm === 'granted') {
+        new Notification('🔔 SW Studio Notifications Enabled!', {
+          body: 'You will now receive instant push alerts on this device whenever a new admission enquiry arrives.',
+        });
+        playNotificationChime();
+      }
+    } catch (e) {
+      console.warn('Notification permission error:', e);
+    }
+  };
+
+  const handleTestNotification = () => {
+    if (soundEnabled) {
+      playNotificationChime();
+    }
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification('🔔 [TEST] Admission Enquiry Alert!', {
+            body: 'Fashion Designing Diploma • Priya Sharma (+91 99939 97767)',
+            icon: siteContent.logos?.brandSymbol || '/icon.png',
+          });
+        } catch (e) {
+          console.warn('Notification trigger error:', e);
+        }
+      } else {
+        requestNotificationPermission();
+      }
+    }
+    setNewEnquiryToast({
+      id: `test-${Date.now()}`,
+      name: 'Priya Sharma (Sample Live Test)',
+      phone: '+91 99939 97767',
+      email: 'priya.sharma@example.com',
+      age: '19',
+      course: 'Fashion Design',
+      message: 'Hello, I want to know about the 1-Year Diploma in Fashion Designing and batch timings for 2026.',
+      timestamp: new Date().toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }),
+      status: 'New',
+    });
+  };
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyLead = (enq: Enquiry) => {
+    const text = `SW INSTITUTE LEAD:\nName: ${enq.name}\nPhone: ${enq.phone}\nCourse: ${enq.course}\nTime: ${enq.timestamp}\nQuery: ${enq.message || 'N/A'}`;
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(text);
+      setCopiedId(enq.id);
+      setTimeout(() => setCopiedId(null), 2500);
+    }
+  };
+
+  const getForwardToAdminWhatsAppUrl = (enq: Enquiry) => {
+    const adminPhone = (siteContent.contactWhatsapp || '917772992592').replace(/[^\d]/g, '');
+    const text = `🚨 *NEW ADMISSION LEAD — SW INSTITUTE*\n\n👤 *Student Name*: ${enq.name}\n📱 *Phone Number*: ${enq.phone}\n🎓 *Program*: ${enq.course}\n${enq.email ? `✉️ *Email*: ${enq.email}\n` : ''}${enq.age ? `🎂 *Age*: ${enq.age}\n` : ''}📅 *Submitted*: ${enq.timestamp}\n💬 *Student Query*: ${enq.message || 'General admission enquiry'}\n\n👉 *Status*: ${enq.status}`;
+    return `https://wa.me/${adminPhone}?text=${encodeURIComponent(text)}`;
+  };
+
+  const getStudentWhatsAppUrl = (enq: Enquiry) => {
+    const cleanPhone = enq.phone.replace(/[^\d]/g, '');
+    const text = `Hello ${enq.name}! This is SW Institute regarding your admission enquiry for ${enq.course}. How can we assist you with syllabus, fee details, and batch timings?`;
+    return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
+  };
 
   // New Course Draft State
   const [newCourse, setNewCourse] = useState<Partial<Course>>({
@@ -304,7 +443,49 @@ export default function SWStudioAdminPage() {
     if (token === 'authenticated') {
       setIsAuthenticated(true);
     }
-  }, []);
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationPermission(Notification.permission);
+    }
+
+    // Subscribe to Realtime Firestore Enquiries
+    const unsubscribeEnquiries = subscribeToFirebaseEnquiries((remoteEnquiries) => {
+      if (remoteEnquiries) {
+        if (isInitialEnquiryLoadRef.current) {
+          seenEnquiryIdsRef.current = new Set(remoteEnquiries.map((e) => e.id));
+          isInitialEnquiryLoadRef.current = false;
+          setEnquiries(remoteEnquiries);
+          saveStoredEnquiries(remoteEnquiries);
+        } else {
+          // Detect brand new enquiries arriving live
+          const newlyArrived = remoteEnquiries.filter((e) => !seenEnquiryIdsRef.current.has(e.id));
+          if (newlyArrived.length > 0) {
+            const latest = newlyArrived[0];
+            if (soundEnabled) {
+              playNotificationChime();
+            }
+            if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+              try {
+                new Notification(`🔔 New Enquiry: ${latest.name}`, {
+                  body: `${latest.course} • Phone: ${latest.phone}`,
+                  icon: siteContent.logos?.brandSymbol || '/icon.png',
+                });
+              } catch (e) {
+                console.warn('Device notification error:', e);
+              }
+            }
+            setNewEnquiryToast(latest);
+            newlyArrived.forEach((e) => seenEnquiryIdsRef.current.add(e.id));
+          }
+          setEnquiries(remoteEnquiries);
+          saveStoredEnquiries(remoteEnquiries);
+        }
+      }
+    }, siteContent.firebaseConfig);
+
+    return () => {
+      if (unsubscribeEnquiries) unsubscribeEnquiries();
+    };
+  }, [siteContent.firebaseConfig, soundEnabled, siteContent.logos?.brandSymbol]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -337,12 +518,15 @@ export default function SWStudioAdminPage() {
     const updated = enquiries.map((e) => (e.id === id ? { ...e, status } : e));
     setEnquiries(updated);
     saveStoredEnquiries(updated);
+    updateEnquiryStatusInFirebase(id, status, siteContent.firebaseConfig);
   };
 
   const handleDeleteEnquiry = (id: string) => {
+    if (!confirm('Are you sure you want to delete this enquiry?')) return;
     const updated = enquiries.filter((e) => e.id !== id);
     setEnquiries(updated);
     saveStoredEnquiries(updated);
+    deleteEnquiryFromFirebase(id, siteContent.firebaseConfig);
   };
 
   const handleCreateCourse = (e: React.FormEvent) => {
@@ -544,12 +728,96 @@ export default function SWStudioAdminPage() {
     );
   }
 
+  // Filtered Enquiries for Search & Status
+  const filteredEnquiries = enquiries.filter((enq) => {
+    const q = enquirySearch.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      enq.name.toLowerCase().includes(q) ||
+      enq.phone.toLowerCase().includes(q) ||
+      enq.course.toLowerCase().includes(q) ||
+      (enq.email && enq.email.toLowerCase().includes(q)) ||
+      (enq.message && enq.message.toLowerCase().includes(q));
+    const matchesStatus =
+      enquiryStatusFilter === 'All' || enq.status === enquiryStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const pendingLeadsCount = enquiries.filter((e) => e.status === 'New').length;
+
   // ADMIN CMS MAIN DASHBOARD
   return (
     <div className="min-h-screen bg-[#0B0B0D] text-white flex flex-col font-sans selection:bg-[#F20D63]">
+      {/* Real-time New Enquiry Floating Push Toast Banner */}
+      <AnimatePresence>
+        {newEnquiryToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -40, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -40, scale: 0.95 }}
+            className="fixed top-20 right-4 z-[9999] max-w-md w-[calc(100%-2rem)] bg-[#16161D] border-2 border-[#F20D63] text-white p-4 rounded-2xl shadow-2xl shadow-pink-600/40 backdrop-blur-xl space-y-3"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F20D63] opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F20D63]"></span>
+                </span>
+                <span className="text-[11px] font-mono uppercase tracking-widest text-[#F20D63] font-black">
+                  🔥 NEW REALTIME ENQUIRY!
+                </span>
+              </div>
+              <button
+                onClick={() => setNewEnquiryToast(null)}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div>
+              <h4 className="font-bold text-base text-white">{newEnquiryToast.name}</h4>
+              <p className="text-xs text-[#FFB800] font-mono mt-0.5">{newEnquiryToast.course}</p>
+              <p className="text-xs text-neutral-300 font-mono mt-0.5">{newEnquiryToast.phone}</p>
+              {newEnquiryToast.message && (
+                <p className="text-xs text-neutral-400 italic mt-1 line-clamp-2 bg-black/40 p-2 rounded-lg border border-white/5">
+                  &quot;{newEnquiryToast.message}&quot;
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
+              <button
+                onClick={() => {
+                  setActiveTab('enquiries');
+                  setNewEnquiryToast(null);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-[#F20D63] text-white text-xs font-bold uppercase tracking-wider hover:bg-white hover:text-black transition-colors cursor-pointer"
+              >
+                Open in Enquiries
+              </button>
+              <a
+                href={`tel:${newEnquiryToast.phone}`}
+                className="px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <Phone className="w-3.5 h-3.5" /> Call
+              </a>
+              <a
+                href={getStudentWhatsAppUrl(newEnquiryToast)}
+                target="_blank"
+                rel="noreferrer"
+                className="px-3 py-1.5 rounded-xl bg-[#25D366] text-black text-xs font-bold uppercase tracking-wider hover:opacity-90 transition-opacity flex items-center gap-1 cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5" /> WhatsApp
+              </a>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Admin Bar */}
-      <header className="bg-[#121216] border-b border-white/10 px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-4">
+      <header className="bg-[#121216] border-b border-white/10 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-40">
+        <div className="flex items-center gap-3 sm:gap-4">
           <SWLogo
             layout="horizontal"
             variant="light"
@@ -559,36 +827,53 @@ export default function SWStudioAdminPage() {
           <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-[#F20D63] text-white text-[10px] font-mono font-bold uppercase tracking-widest">
             MASTER CMS
           </span>
+          <button
+            onClick={() => setActiveTab('enquiries')}
+            className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+              pendingLeadsCount > 0
+                ? 'bg-[#F20D63] text-white animate-pulse'
+                : 'bg-white/5 text-neutral-400 hover:text-white'
+            }`}
+            title="Real-time Enquiries Counter"
+          >
+            <Bell className="w-3 h-3" />
+            <span>{enquiries.length} LEADS</span>
+            {pendingLeadsCount > 0 && (
+              <span className="bg-white text-black font-black px-1.5 py-0.2 rounded-full text-[9px]">
+                {pendingLeadsCount} NEW
+              </span>
+            )}
+          </button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Live Preview Split Toggle */}
           <button
             onClick={() => setLivePreview(!livePreview)}
-            className={`px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+            className={`px-3 sm:px-4 py-2 rounded-full text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
               livePreview
                 ? 'bg-[#1749C6] text-white shadow-lg'
                 : 'bg-white/10 text-neutral-300 hover:bg-white/20'
             }`}
           >
             <Eye className="w-4 h-4" />
-            <span>{livePreview ? 'HIDE PREVIEW' : 'LIVE PREVIEW'}</span>
+            <span className="hidden sm:inline">{livePreview ? 'HIDE PREVIEW' : 'LIVE PREVIEW'}</span>
           </button>
 
           {/* Global Save Button */}
           <button
             onClick={handleSaveAll}
-            className="px-4 py-2.5 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer"
           >
             <Save className="w-4 h-4" />
-            <span>SAVE ALL</span>
+            <span className="hidden sm:inline">SAVE ALL</span>
           </button>
 
           {/* Master Cloud Sync Button (ImgBB + Firebase) */}
           <button
             onClick={handleFullCloudSync}
             disabled={isFullSyncing}
-            className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
+            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
             title="Upload all media to ImgBB CDN and sync data to Firebase Firestore"
           >
             <CloudUpload className={`w-4 h-4 ${isFullSyncing ? 'animate-bounce' : ''}`} />
@@ -620,6 +905,42 @@ export default function SWStudioAdminPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Mobile Horizontal Navigation Bar */}
+      <div className="md:hidden flex items-center gap-2 overflow-x-auto p-2.5 bg-[#121216] border-b border-white/10 shrink-0 scrollbar-none z-30">
+        {[
+          { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+          { id: 'enquiries', label: `Leads (${enquiries.length})`, icon: MessageSquare, badge: pendingLeadsCount },
+          { id: 'appearance', label: 'Theme', icon: Palette },
+          { id: 'logos', label: 'Logos', icon: Upload },
+          { id: 'section-reorder', label: 'Reorder', icon: Layers },
+          { id: 'courses', label: `Courses (${courses.length})`, icon: BookOpen },
+          { id: 'gallery', label: `Gallery (${gallery.length})`, icon: ImageIcon },
+          { id: 'settings', label: 'Settings', icon: Settings },
+        ].map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id as any)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+                isActive
+                  ? 'bg-[#F20D63] text-white shadow-md shadow-pink-600/30'
+                  : 'bg-white/5 text-neutral-300 hover:bg-white/10'
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              <span>{item.label}</span>
+              {item.badge && item.badge > 0 ? (
+                <span className="px-1.5 py-0.5 rounded-full bg-white text-black text-[9px] font-mono font-black">
+                  {item.badge}
+                </span>
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
 
       {/* Main Content Workspace Layout */}
       <div className="flex-1 flex overflow-hidden">
@@ -787,6 +1108,372 @@ export default function SWStudioAdminPage() {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
+
+            {/* REAL-TIME ADMISSION ENQUIRIES WORKSPACE */}
+            {activeTab === 'enquiries' && (
+              <div className="space-y-8 max-w-6xl">
+                {/* Header & Live Stream Beacon */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-white/10 pb-6">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </span>
+                      <span className="text-xs font-mono font-bold text-emerald-400 uppercase tracking-widest">
+                        FIRESTORE REAL-TIME STREAM ACTIVE
+                      </span>
+                    </div>
+                    <h1 className="text-3xl font-black uppercase mt-1">ADMISSION ENQUIRIES & LEADS</h1>
+                    <p className="text-xs text-neutral-400 mt-1 max-w-xl">
+                      Real-time cloud database listener is active. New enquiries submitted by students on mobile or PC appear here immediately with audio chimes and push alerts.
+                    </p>
+                  </div>
+
+                  {/* Device Push & Sound Alert Quick Controls */}
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {/* Browser Push Permission Button */}
+                    <button
+                      onClick={requestNotificationPermission}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer ${
+                        notificationPermission === 'granted'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                          : 'bg-[#F20D63] text-white shadow-lg shadow-pink-600/30 hover:bg-white hover:text-black'
+                      }`}
+                      title={
+                        notificationPermission === 'granted'
+                          ? 'Device notifications active'
+                          : 'Click to enable mobile/PC device notifications'
+                      }
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      <span>
+                        {notificationPermission === 'granted'
+                          ? '✓ Device Alerts Enabled'
+                          : 'Enable Device Push Alerts'}
+                      </span>
+                    </button>
+
+                    {/* Sound Alert Toggle */}
+                    <button
+                      onClick={() => setSoundEnabled(!soundEnabled)}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                        soundEnabled
+                          ? 'bg-white/10 text-white hover:bg-white/20'
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}
+                      title="Toggle sound chime on new enquiry"
+                    >
+                      {soundEnabled ? (
+                        <>
+                          <Volume2 className="w-3.5 h-3.5 text-[#FFB800]" />
+                          <span>Sound: ON</span>
+                        </>
+                      ) : (
+                        <>
+                          <VolumeX className="w-3.5 h-3.5" />
+                          <span>Sound: OFF</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Test Audio & Notification Button */}
+                    <button
+                      onClick={handleTestNotification}
+                      className="px-3 py-2 rounded-xl bg-white/5 border border-white/15 text-neutral-300 hover:text-white hover:border-[#1749C6] text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                      title="Test Audio Chime & Device Push Notification"
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#00F0FF]" />
+                      <span>Test Chime & Alert</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Metrics Summary Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                    <span className="text-[10px] font-mono text-neutral-400 uppercase">TOTAL LEADS</span>
+                    <span className="block text-2xl font-black text-white mt-1">
+                      {enquiries.length}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#F20D63]/10 border border-[#F20D63]/30">
+                    <span className="text-[10px] font-mono text-[#F20D63] uppercase font-bold">
+                      NEW / UNCONTACTED
+                    </span>
+                    <span className="block text-2xl font-black text-[#F20D63] mt-1">
+                      {enquiries.filter((e) => e.status === 'New').length}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-[#1749C6]/10 border border-[#1749C6]/30">
+                    <span className="text-[10px] font-mono text-[#1749C6] uppercase font-bold">
+                      IN CONTACT
+                    </span>
+                    <span className="block text-2xl font-black text-[#1749C6] mt-1">
+                      {enquiries.filter((e) => e.status === 'Contacted').length}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30">
+                    <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold">
+                      ENROLLED
+                    </span>
+                    <span className="block text-2xl font-black text-emerald-400 mt-1">
+                      {enquiries.filter((e) => e.status === 'Enrolled').length}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Search & Filter Bar */}
+                <div className="p-4 rounded-2xl bg-[#16161D] border border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                  {/* Search Input */}
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search by student name, phone, course, question..."
+                      value={enquirySearch}
+                      onChange={(e) => setEnquirySearch(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 rounded-xl bg-white/5 border border-white/10 focus:border-[#F20D63] focus:outline-none text-white text-xs placeholder:text-neutral-500"
+                    />
+                    {enquirySearch && (
+                      <button
+                        onClick={() => setEnquirySearch('')}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Status Filter Buttons */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 md:pb-0">
+                    <span className="text-[10px] font-mono text-neutral-500 uppercase mr-1 hidden sm:inline">
+                      STATUS:
+                    </span>
+                    {(['All', 'New', 'Contacted', 'Enrolled', 'Closed'] as const).map((st) => {
+                      const isSel = enquiryStatusFilter === st;
+                      const count =
+                        st === 'All'
+                          ? enquiries.length
+                          : enquiries.filter((e) => e.status === st).length;
+                      return (
+                        <button
+                          key={st}
+                          onClick={() => setEnquiryStatusFilter(st)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                            isSel
+                              ? 'bg-white text-black shadow-md'
+                              : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          {st} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Enquiries Leads Cards Container */}
+                {filteredEnquiries.length === 0 ? (
+                  <div className="text-center py-16 px-4 bg-white/5 rounded-3xl border border-white/10 space-y-3">
+                    <MessageSquare className="w-10 h-10 text-neutral-500 mx-auto" />
+                    <h3 className="text-lg font-black uppercase text-white">NO ENQUIRIES MATCH FILTERS</h3>
+                    <p className="text-xs text-neutral-400 max-w-sm mx-auto">
+                      {enquirySearch || enquiryStatusFilter !== 'All'
+                        ? 'Try clearing the search query or changing your status filter.'
+                        : 'No admission enquiries yet. Test by submitting an enquiry on the website.'}
+                    </p>
+                    {(enquirySearch || enquiryStatusFilter !== 'All') && (
+                      <button
+                        onClick={() => {
+                          setEnquirySearch('');
+                          setEnquiryStatusFilter('All');
+                        }}
+                        className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-bold uppercase hover:bg-white/20 transition-colors cursor-pointer"
+                      >
+                        Reset All Filters
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredEnquiries.map((enq) => (
+                      <div
+                        key={enq.id}
+                        className={`p-6 rounded-3xl border transition-all ${
+                          enq.status === 'New'
+                            ? 'bg-[#181822] border-[#F20D63]/40 shadow-lg shadow-pink-600/10'
+                            : 'bg-white/5 border-white/10 hover:border-white/20'
+                        }`}
+                      >
+                        {/* Lead Header */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
+                          <div className="flex flex-wrap items-center gap-2.5">
+                            <span
+                              className={`px-3 py-1 rounded-full text-[10px] font-mono uppercase font-black tracking-wider ${
+                                enq.status === 'New'
+                                  ? 'bg-[#F20D63] text-white animate-pulse'
+                                  : enq.status === 'Contacted'
+                                  ? 'bg-[#1749C6]/30 text-[#1749C6] border border-[#1749C6]/50'
+                                  : enq.status === 'Enrolled'
+                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                                  : 'bg-neutral-500/20 text-neutral-400'
+                              }`}
+                            >
+                              ● {enq.status.toUpperCase()}
+                            </span>
+
+                            <span className="text-[11px] font-mono text-neutral-400 flex items-center gap-1.5">
+                              <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                              <span>{enq.timestamp}</span>
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Copy Lead Button */}
+                            <button
+                              onClick={() => handleCopyLead(enq)}
+                              className="px-2.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                              title="Copy lead information"
+                            >
+                              {copiedId === enq.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-emerald-400">COPIED</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>COPY</span>
+                                </>
+                              )}
+                            </button>
+
+                            {/* Delete Lead Button */}
+                            <button
+                              onClick={() => handleDeleteEnquiry(enq.id)}
+                              className="p-1.5 rounded-lg bg-white/5 hover:bg-red-500/20 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+                              title="Delete Enquiry"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Lead Body Content */}
+                        <div className="py-4 grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                          <div className="md:col-span-4 space-y-1">
+                            <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider block">
+                              STUDENT NAME
+                            </span>
+                            <h3 className="text-xl font-black text-white">{enq.name}</h3>
+                            <a
+                              href={`tel:${enq.phone.replace(/\s+/g, '')}`}
+                              className="inline-flex items-center gap-1.5 font-mono text-sm text-[#00F0FF] hover:underline font-bold"
+                            >
+                              <Phone className="w-3.5 h-3.5" />
+                              <span>{enq.phone}</span>
+                            </a>
+                            {enq.email && (
+                              <p className="text-xs text-neutral-400 flex items-center gap-1 truncate">
+                                <Mail className="w-3 h-3 text-neutral-500 shrink-0" />
+                                <span>{enq.email}</span>
+                              </p>
+                            )}
+                            {enq.age && (
+                              <p className="text-xs text-neutral-400">
+                                Age: <span className="text-white font-medium">{enq.age}</span>
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="md:col-span-8 space-y-2">
+                            <div>
+                              <span className="text-[10px] font-mono text-neutral-500 uppercase tracking-wider block">
+                                PROGRAM ENQUIRY
+                              </span>
+                              <span className="inline-block px-3 py-1 rounded-xl bg-[#FFB800]/15 text-[#FFB800] border border-[#FFB800]/30 font-bold text-xs mt-1">
+                                🎓 {enq.course}
+                              </span>
+                            </div>
+
+                            {enq.message && (
+                              <div className="p-3.5 rounded-2xl bg-black/40 border border-white/5 text-xs text-neutral-300 leading-relaxed">
+                                <span className="text-[10px] font-mono text-neutral-500 uppercase block mb-1">
+                                  MESSAGE / QUESTION:
+                                </span>
+                                &quot;{enq.message}&quot;
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Lead Action Controls */}
+                        <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+                          {/* Quick Communication Actions */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Call Student */}
+                            <a
+                              href={`tel:${enq.phone.replace(/\s+/g, '')}`}
+                              className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white hover:text-black font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-colors cursor-pointer"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-emerald-400" />
+                              <span>CALL STUDENT</span>
+                            </a>
+
+                            {/* Chat With Student WhatsApp */}
+                            <a
+                              href={getStudentWhatsAppUrl(enq)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-4 py-2 rounded-xl bg-[#25D366] text-black font-bold text-xs uppercase tracking-wider hover:opacity-90 flex items-center gap-2 transition-opacity cursor-pointer"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 fill-black" />
+                              <span>STUDENT WHATSAPP</span>
+                            </a>
+
+                            {/* Forward Lead to Admin WhatsApp Desk */}
+                            <a
+                              href={getForwardToAdminWhatsAppUrl(enq)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="px-4 py-2 rounded-xl bg-[#1749C6]/20 border border-[#1749C6]/40 text-[#1749C6] hover:bg-[#1749C6] hover:text-white font-bold text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
+                              title="Forward lead formatted to institute admin WhatsApp desk"
+                            >
+                              <Share2 className="w-3.5 h-3.5" />
+                              <span>FORWARD TO ADMIN WA</span>
+                            </a>
+                          </div>
+
+                          {/* Status Updater Buttons */}
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-mono text-neutral-400 uppercase mr-1">
+                              STATUS:
+                            </span>
+                            {(['New', 'Contacted', 'Enrolled', 'Closed'] as const).map((st) => (
+                              <button
+                                key={st}
+                                onClick={() => handleUpdateEnquiryStatus(enq.id, st)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all cursor-pointer ${
+                                  enq.status === st
+                                    ? 'bg-[#F20D63] text-white shadow-md'
+                                    : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10'
+                                }`}
+                              >
+                                {st}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
