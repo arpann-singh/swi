@@ -12,7 +12,7 @@ import {
   orderBy,
   Firestore,
 } from 'firebase/firestore';
-import { SiteContent, Enquiry, FirebaseSettings } from './types';
+import { SiteContent, Course, GalleryItem, Enquiry, FirebaseSettings } from './types';
 
 // Default Firebase Configuration (Uses env vars or default fallback)
 const defaultFirebaseConfig: FirebaseSettings = {
@@ -128,5 +128,77 @@ export const saveEnquiryToFirebase = async (enquiry: Enquiry, config?: FirebaseS
   } catch (error) {
     console.error('Error saving enquiry to Firebase:', error);
     return false;
+  }
+};
+
+/**
+ * Unified Full Cloud Backup:
+ * Writes Site Content, Courses, Gallery, and Enquiries into Firestore.
+ */
+export const syncAllDataToFirebase = async (
+  content: SiteContent,
+  courses: Course[],
+  gallery: GalleryItem[],
+  enquiries: Enquiry[],
+  config?: FirebaseSettings
+): Promise<{ success: boolean; error?: string; enquiriesCount: number }> => {
+  const { db } = initFirebase(config);
+  if (!db) return { success: false, enquiriesCount: 0, error: 'Firebase could not be initialized. Please verify your Project ID and API Key.' };
+
+  try {
+    // 1. Save unified content document (contains embedded courses & gallery for instant single-fetch synchronization)
+    const contentRef = doc(db, 'sw_site', 'content');
+    await setDoc(
+      contentRef,
+      {
+        ...content,
+        courses,
+        gallery,
+        lastCloudSync: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    // 2. Save dedicated courses document
+    const coursesRef = doc(db, 'sw_site', 'courses');
+    await setDoc(
+      coursesRef,
+      {
+        list: courses,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    // 3. Save dedicated gallery document
+    const galleryRef = doc(db, 'sw_site', 'gallery');
+    await setDoc(
+      galleryRef,
+      {
+        list: gallery,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    // 4. Save/backup all existing enquiries with idempotent IDs
+    let count = 0;
+    for (const enq of enquiries) {
+      const enqDocRef = doc(db, 'enquiries', enq.id);
+      await setDoc(
+        enqDocRef,
+        {
+          ...enq,
+          syncedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      count++;
+    }
+
+    return { success: true, enquiriesCount: count };
+  } catch (err: any) {
+    console.error('Error in syncAllDataToFirebase:', err);
+    return { success: false, enquiriesCount: 0, error: err?.message || 'Failed to sync all data to Firebase' };
   }
 };

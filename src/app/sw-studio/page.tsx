@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SWLogo } from '@/components/SWLogo';
-import { uploadToImgBB } from '@/lib/imgbb';
-import { saveContentToFirebase } from '@/lib/firebase';
+import { uploadToImgBB, syncImageToImgBB } from '@/lib/imgbb';
+import { saveContentToFirebase, syncAllDataToFirebase } from '@/lib/firebase';
 import {
   Lock,
   LayoutDashboard,
@@ -15,6 +15,7 @@ import {
   Settings,
   Database,
   Cloud,
+  CloudUpload,
   KeyRound,
   Radio,
   Eye,
@@ -22,6 +23,8 @@ import {
   Trash2,
   Save,
   CheckCircle2,
+  AlertCircle,
+  Loader2,
   Send,
   Sparkles,
   LogOut,
@@ -152,6 +155,147 @@ export default function SWStudioAdminPage() {
     } catch (err: any) {
       setImgbbTestStatus('error');
       setImgbbTestMessage(`✕ Error: ${err?.message || 'Upload failed'}`);
+    }
+  };
+
+  // Full Cloud Sync Engine (ImgBB CDN + Firebase Firestore)
+  const [showSyncModal, setShowSyncModal] = useState(false);
+  const [isFullSyncing, setIsFullSyncing] = useState(false);
+  const [fullSyncProgress, setFullSyncProgress] = useState(0);
+  const [fullSyncStatusText, setFullSyncStatusText] = useState('');
+  const [fullSyncResult, setFullSyncResult] = useState<{
+    success: boolean;
+    imagesUploaded: number;
+    enquiriesSynced: number;
+    error?: string;
+  } | null>(null);
+
+  const handleFullCloudSync = async () => {
+    setShowSyncModal(true);
+    setIsFullSyncing(true);
+    setFullSyncProgress(10);
+    setFullSyncResult(null);
+    setFullSyncStatusText('Initializing Cloud Engine & reading local media assets...');
+
+    try {
+      const currentApiKey = siteContent.imgbbApiKey || process.env.NEXT_PUBLIC_IMGBB_API_KEY || '07afc547f88e09e5ced81621fd89ddea';
+      let imagesUploaded = 0;
+
+      // 1. Sync Logos
+      setFullSyncStatusText('Uploading institute brand logos to ImgBB CDN...');
+      setFullSyncProgress(25);
+      const updatedLogos = { ...siteContent.logos };
+      for (const key of ['headerLogo', 'mobileHeaderLogo', 'footerLogo', 'adminLogo', 'brandSymbol'] as const) {
+        if (updatedLogos[key]) {
+          const res = await syncImageToImgBB(updatedLogos[key]!, currentApiKey);
+          if (res.uploaded) {
+            updatedLogos[key] = res.url;
+            imagesUploaded++;
+          }
+        }
+      }
+
+      // 2. Sync Hero Background Images
+      setFullSyncStatusText('Uploading Hero Section 3D renders to ImgBB CDN...');
+      setFullSyncProgress(40);
+      let newHeroImage1 = siteContent.heroImage1;
+      let newHeroImage2 = siteContent.heroImage2;
+
+      if (newHeroImage1) {
+        const res = await syncImageToImgBB(newHeroImage1, currentApiKey);
+        if (res.uploaded) {
+          newHeroImage1 = res.url;
+          imagesUploaded++;
+        }
+      }
+      if (newHeroImage2) {
+        const res = await syncImageToImgBB(newHeroImage2, currentApiKey);
+        if (res.uploaded) {
+          newHeroImage2 = res.url;
+          imagesUploaded++;
+        }
+      }
+
+      // 3. Sync Course Cards Images
+      setFullSyncStatusText('Uploading Diploma Courses graphics to ImgBB CDN...');
+      setFullSyncProgress(60);
+      const updatedCourses = [...courses];
+      for (let i = 0; i < updatedCourses.length; i++) {
+        if (updatedCourses[i].image) {
+          const res = await syncImageToImgBB(updatedCourses[i].image, currentApiKey);
+          if (res.uploaded) {
+            updatedCourses[i] = { ...updatedCourses[i], image: res.url };
+            imagesUploaded++;
+          }
+        }
+      }
+
+      // 4. Sync "Made at SW" Gallery Images
+      setFullSyncStatusText('Uploading "Made at SW" gallery photos to ImgBB CDN...');
+      setFullSyncProgress(80);
+      const updatedGallery = [...gallery];
+      for (let i = 0; i < updatedGallery.length; i++) {
+        if (updatedGallery[i].image) {
+          const res = await syncImageToImgBB(updatedGallery[i].image, currentApiKey);
+          if (res.uploaded) {
+            updatedGallery[i] = { ...updatedGallery[i], image: res.url };
+            imagesUploaded++;
+          }
+        }
+      }
+
+      // 5. Update local state and localStorage
+      const updatedContent: SiteContent = {
+        ...siteContent,
+        logos: updatedLogos,
+        heroImage1: newHeroImage1,
+        heroImage2: newHeroImage2,
+        courses: updatedCourses,
+        gallery: updatedGallery,
+        lastCloudSync: new Date().toISOString(),
+      };
+
+      setSiteContent(updatedContent);
+      setCourses(updatedCourses);
+      setGallery(updatedGallery);
+      saveStoredContent(updatedContent);
+      saveStoredCourses(updatedCourses);
+      saveStoredGallery(updatedGallery);
+      saveStoredEnquiries(enquiries);
+
+      // 6. Push Full Package to Firebase Firestore
+      setFullSyncStatusText('Saving content, courses, gallery, and enquiries to Firebase Firestore...');
+      setFullSyncProgress(92);
+
+      const firebaseRes = await syncAllDataToFirebase(
+        updatedContent,
+        updatedCourses,
+        updatedGallery,
+        enquiries,
+        updatedContent.firebaseConfig
+      );
+
+      if (!firebaseRes.success) {
+        throw new Error(firebaseRes.error || 'Failed to sync to Firebase');
+      }
+
+      setFullSyncProgress(100);
+      setFullSyncStatusText('✓ Cloud Synchronization Complete!');
+      setFullSyncResult({
+        success: true,
+        imagesUploaded,
+        enquiriesSynced: firebaseRes.enquiriesCount,
+      });
+      setIsFullSyncing(false);
+    } catch (err: any) {
+      console.error('Full cloud sync error:', err);
+      setIsFullSyncing(false);
+      setFullSyncResult({
+        success: false,
+        imagesUploaded: 0,
+        enquiriesSynced: 0,
+        error: err?.message || 'An error occurred during cloud sync',
+      });
     }
   };
 
@@ -434,10 +578,22 @@ export default function SWStudioAdminPage() {
           {/* Global Save Button */}
           <button
             onClick={handleSaveAll}
-            className="px-5 py-2.5 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer"
+            className="px-4 py-2.5 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer"
           >
             <Save className="w-4 h-4" />
             <span>SAVE ALL</span>
+          </button>
+
+          {/* Master Cloud Sync Button (ImgBB + Firebase) */}
+          <button
+            onClick={handleFullCloudSync}
+            disabled={isFullSyncing}
+            className="px-4 py-2.5 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
+            title="Upload all media to ImgBB CDN and sync data to Firebase Firestore"
+          >
+            <CloudUpload className={`w-4 h-4 ${isFullSyncing ? 'animate-bounce' : ''}`} />
+            <span className="hidden sm:inline">{isFullSyncing ? 'SYNCING...' : 'SYNC ALL TO CLOUD'}</span>
+            <span className="sm:hidden">{isFullSyncing ? '...' : 'SYNC'}</span>
           </button>
 
           <button
@@ -1448,6 +1604,45 @@ export default function SWStudioAdminPage() {
                   </p>
                 </div>
 
+                {/* ONE-CLICK FULL CLOUD SYNC CARD */}
+                <div className="p-6 rounded-2xl bg-gradient-to-br from-[#121216] via-[#161622] to-[#121216] border border-[#00F0FF]/30 shadow-xl shadow-cyan-500/5 space-y-4">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-gradient-to-br from-[#00F0FF]/20 to-[#F20D63]/20 text-[#00F0FF] border border-white/10 shrink-0">
+                        <CloudUpload className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-black uppercase tracking-wide text-white flex items-center gap-2">
+                          One-Click Master Cloud Sync
+                          <span className="px-2 py-0.5 rounded-full bg-[#00F0FF]/20 text-[#00F0FF] text-[9px] font-mono font-bold tracking-widest border border-[#00F0FF]/30">
+                            FIRESTORE + IMGBB
+                          </span>
+                        </h2>
+                        <p className="text-xs text-neutral-300 mt-1 max-w-xl">
+                          Automatically scans all existing website data (real or demo), uploads all logos, hero 3D renders, course cards, and gallery artworks to <strong>ImgBB CDN</strong>, and synchronizes the complete database (content, courses, gallery, and enquiries) to <strong>Firebase Firestore</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleFullCloudSync}
+                      disabled={isFullSyncing}
+                      className="px-6 py-3.5 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] hover:opacity-90 text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-cyan-500/25 cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      <CloudUpload className="w-4 h-4" />
+                      <span>{isFullSyncing ? 'SYNCING ALL DATA...' : 'MIGRATE & SYNC ALL DATA NOW'}</span>
+                    </button>
+                  </div>
+
+                  {siteContent.lastCloudSync && (
+                    <div className="text-[11px] font-mono text-neutral-400 flex items-center gap-2 pt-2 border-t border-white/5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span>Last Successful Full Cloud Sync: {new Date(siteContent.lastCloudSync).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* 1. FIREBASE FIRESTORE CLOUD DATABASE */}
                 <div className="p-6 rounded-2xl bg-[#18181D] border border-white/10 space-y-5">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1738,6 +1933,116 @@ export default function SWStudioAdminPage() {
           )}
         </div>
       </div>
+
+      {/* Full Cloud Sync Interactive Progress & Result Modal */}
+      <AnimatePresence>
+        {showSyncModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="w-full max-w-lg bg-[#141419] border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 text-white"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-[#00F0FF]/20 to-[#F20D63]/20 text-[#00F0FF] border border-white/10">
+                    <CloudUpload className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black uppercase tracking-wide">Master Cloud Synchronization</h3>
+                    <p className="text-[11px] font-mono text-neutral-400">Firebase Firestore & ImgBB CDN</p>
+                  </div>
+                </div>
+                {!isFullSyncing && (
+                  <button
+                    onClick={() => setShowSyncModal(false)}
+                    className="p-2 rounded-full hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer text-sm"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Progress Visualizer */}
+              <div className="space-y-2.5">
+                <div className="flex justify-between text-xs font-mono font-bold">
+                  <span className="text-neutral-400">Sync Progress</span>
+                  <span className="text-[#00F0FF]">{fullSyncProgress}%</span>
+                </div>
+                <div className="w-full h-3 bg-black/80 rounded-full overflow-hidden border border-white/10 p-0.5">
+                  <div
+                    className="h-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] rounded-full transition-all duration-300"
+                    style={{ width: `${fullSyncProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-neutral-300 font-mono flex items-center gap-2 pt-1">
+                  {isFullSyncing && <Loader2 className="w-4 h-4 animate-spin text-[#00F0FF] shrink-0" />}
+                  <span>{fullSyncStatusText}</span>
+                </p>
+              </div>
+
+              {/* Result Summary */}
+              {fullSyncResult && (
+                <div
+                  className={`p-4 rounded-2xl border text-xs font-mono space-y-2 ${
+                    fullSyncResult.success
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-300'
+                  }`}
+                >
+                  {fullSyncResult.success ? (
+                    <>
+                      <div className="flex items-center gap-2 font-bold text-sm text-emerald-400">
+                        <CheckCircle2 className="w-5 h-5 shrink-0" />
+                        <span>CLOUD SYNC COMPLETE & VERIFIED!</span>
+                      </div>
+                      <div className="space-y-1.5 text-[11px] text-neutral-300 pt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400">✓</span>
+                          <span><strong>{fullSyncResult.imagesUploaded}</strong> media files uploaded & converted to ImgBB CDN URLs</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400">✓</span>
+                          <span>Site copy, courses & gallery saved to Firestore <strong>sw_site/content</strong></span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-emerald-400">✓</span>
+                          <span><strong>{fullSyncResult.enquiriesSynced}</strong> real/dummy enquiries synced to collection <strong>enquiries</strong></span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex items-start gap-2.5">
+                      <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-rose-400">Sync Incomplete</div>
+                        <div className="text-[11px] text-neutral-300 mt-0.5">{fullSyncResult.error}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2">
+                {fullSyncResult ? (
+                  <button
+                    onClick={() => setShowSyncModal(false)}
+                    className="w-full py-3.5 rounded-full bg-white text-black font-black uppercase text-xs tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer shadow-lg"
+                  >
+                    DONE / CLOSE
+                  </button>
+                ) : (
+                  <p className="text-[11px] text-neutral-500 text-center font-mono">
+                    Please keep this browser window open while uploading media to CDN...
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

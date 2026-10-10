@@ -23,6 +23,8 @@ import {
   getStoredGallery,
   applySiteTheme,
   saveStoredContent,
+  saveStoredCourses,
+  saveStoredGallery,
 } from '@/lib/cms-store';
 import { subscribeToFirebaseContent } from '@/lib/firebase';
 
@@ -48,6 +50,14 @@ export default function Home() {
       if (remoteContent) {
         saveStoredContent(remoteContent);
         setContent(remoteContent);
+        if (remoteContent.courses && Array.isArray(remoteContent.courses)) {
+          saveStoredCourses(remoteContent.courses);
+          setCourses(remoteContent.courses);
+        }
+        if (remoteContent.gallery && Array.isArray(remoteContent.gallery)) {
+          saveStoredGallery(remoteContent.gallery);
+          setGallery(remoteContent.gallery);
+        }
         applySiteTheme(remoteContent);
       }
     }, content.firebaseConfig);

@@ -119,5 +119,10 @@ export interface SiteContent {
   contactAddress: string;
   admissionsOpen: boolean;
   academicYear: string;
+
+  // Cloud Sync Embedded Data
+  courses?: Course[];
+  gallery?: GalleryItem[];
+  lastCloudSync?: string;
 }
 

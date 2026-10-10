@@ -12,7 +12,7 @@ export interface ImgBBResponse {
 }
 
 export const uploadToImgBB = async (
-  fileOrBase64: File | string,
+  fileOrBase64: File | Blob | string,
   apiKey?: string
 ): Promise<ImgBBResponse> => {
   try {
@@ -32,8 +32,10 @@ export const uploadToImgBB = async (
       // Strips data URL prefix if present for clean base64 payload
       const cleanBase64 = fileOrBase64.replace(/^data:image\/[a-z]+;base64,/, '');
       formData.append('image', cleanBase64);
-    } else {
+    } else if (fileOrBase64 instanceof File) {
       formData.append('image', fileOrBase64);
+    } else {
+      formData.append('image', fileOrBase64, 'upload.jpg');
     }
 
     const response = await fetch('https://api.imgbb.com/1/upload', {
@@ -63,3 +65,52 @@ export const uploadToImgBB = async (
     };
   }
 };
+
+/**
+ * Syncs any image (local URL, relative path, or Base64 data URL) to ImgBB CDN.
+ * If the image is already hosted on ImgBB CDN (e.g. ibb.co), returns original URL.
+ */
+export const syncImageToImgBB = async (
+  imageUrl: string,
+  apiKey?: string
+): Promise<{ url: string; uploaded: boolean; error?: string }> => {
+  if (!imageUrl || imageUrl.trim() === '') {
+    return { url: '', uploaded: false };
+  }
+
+  // Already hosted on ImgBB CDN
+  if (imageUrl.includes('ibb.co') || imageUrl.includes('imgbb.com')) {
+    return { url: imageUrl, uploaded: false };
+  }
+
+  try {
+    // If it's a Base64 Data URL
+    if (imageUrl.startsWith('data:image/')) {
+      const res = await uploadToImgBB(imageUrl, apiKey);
+      if (res.success && (res.displayUrl || res.url)) {
+        return { url: res.displayUrl || res.url || imageUrl, uploaded: true };
+      }
+      return { url: imageUrl, uploaded: false, error: res.error };
+    }
+
+    // If it's a relative URL or accessible image URL, fetch as blob in browser
+    if (typeof window !== 'undefined') {
+      const response = await fetch(imageUrl);
+      if (!response.ok) {
+        return { url: imageUrl, uploaded: false, error: `Failed to fetch image: ${response.statusText}` };
+      }
+      const blob = await response.blob();
+      const res = await uploadToImgBB(blob, apiKey);
+      if (res.success && (res.displayUrl || res.url)) {
+        return { url: res.displayUrl || res.url || imageUrl, uploaded: true };
+      }
+      return { url: imageUrl, uploaded: false, error: res.error };
+    }
+
+    return { url: imageUrl, uploaded: false };
+  } catch (err: any) {
+    console.warn('Error syncing image to ImgBB:', err);
+    return { url: imageUrl, uploaded: false, error: err?.message };
+  }
+};
+
