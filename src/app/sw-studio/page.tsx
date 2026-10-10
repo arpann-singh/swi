@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SWLogo } from '@/components/SWLogo';
 import { uploadToImgBB } from '@/lib/imgbb';
+import { saveContentToFirebase } from '@/lib/firebase';
 import {
   Lock,
   LayoutDashboard,
@@ -12,6 +13,10 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Settings,
+  Database,
+  Cloud,
+  KeyRound,
+  Radio,
   Eye,
   Plus,
   Trash2,
@@ -106,6 +111,49 @@ export default function SWStudioAdminPage() {
     aspectRatio: 'square',
   });
   const [showAddGallery, setShowAddGallery] = useState(false);
+
+  // Cloud & Database Test States
+  const [firebaseTestStatus, setFirebaseTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [firebaseTestMessage, setFirebaseTestMessage] = useState('');
+  const [imgbbTestStatus, setImgbbTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [imgbbTestMessage, setImgbbTestMessage] = useState('');
+
+  const handleTestFirebase = async () => {
+    setFirebaseTestStatus('testing');
+    setFirebaseTestMessage('Testing Firestore Cloud connection...');
+    try {
+      const res = await saveContentToFirebase(siteContent, siteContent.firebaseConfig);
+      if (res) {
+        setFirebaseTestStatus('success');
+        setFirebaseTestMessage('✓ Cloud Firestore connected & sw_site/content document synchronized!');
+      } else {
+        setFirebaseTestStatus('error');
+        setFirebaseTestMessage('✕ Could not write to Firebase. Check API keys and Firestore security rules.');
+      }
+    } catch (err: any) {
+      setFirebaseTestStatus('error');
+      setFirebaseTestMessage(`✕ Error: ${err?.message || 'Connection failed'}`);
+    }
+  };
+
+  const handleTestImgBB = async () => {
+    setImgbbTestStatus('testing');
+    setImgbbTestMessage('Testing ImgBB CDN API...');
+    try {
+      const testPng = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAA=';
+      const res = await uploadToImgBB(testPng, siteContent.imgbbApiKey);
+      if (res.success && res.url) {
+        setImgbbTestStatus('success');
+        setImgbbTestMessage(`✓ ImgBB CDN upload verified! Image URL: ${res.url}`);
+      } else {
+        setImgbbTestStatus('error');
+        setImgbbTestMessage(`✕ ImgBB Error: ${res.error || 'Failed to upload'}`);
+      }
+    } catch (err: any) {
+      setImgbbTestStatus('error');
+      setImgbbTestMessage(`✕ Error: ${err?.message || 'Upload failed'}`);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('sw_admin_auth');
@@ -434,7 +482,7 @@ export default function SWStudioAdminPage() {
             { id: 'section-content', label: 'Section Copy Editor', icon: FileText },
             { id: 'courses', label: `Courses (${courses.length})`, icon: BookOpen },
             { id: 'gallery', label: `Gallery (${gallery.length})`, icon: ImageIcon },
-            { id: 'settings', label: 'Contact Settings', icon: Settings },
+            { id: 'settings', label: 'Cloud & Settings', icon: Settings },
           ].map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -1390,61 +1438,282 @@ export default function SWStudioAdminPage() {
               </div>
             )}
 
-            {/* CONTACT SETTINGS */}
+            {/* CLOUD DATABASE & CONTACT SETTINGS */}
             {activeTab === 'settings' && (
-              <div className="space-y-6 max-w-3xl">
+              <div className="space-y-8 max-w-4xl">
                 <div>
-                  <h1 className="text-3xl font-black uppercase">CONTACT & LOCATION SETTINGS</h1>
-                  <p className="text-xs text-neutral-400 mt-1">Update campus numbers, email, and address.</p>
+                  <h1 className="text-3xl font-black uppercase">CLOUD DATABASE & SYSTEM SETTINGS</h1>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Manage real-time Firebase Firestore synchronization, ImgBB image CDN uploads, and campus contact details.
+                  </p>
                 </div>
 
-                <div className="space-y-4 text-xs font-semibold">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* 1. FIREBASE FIRESTORE CLOUD DATABASE */}
+                <div className="p-6 rounded-2xl bg-[#18181D] border border-white/10 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-[#F20D63]/20 text-[#F20D63]">
+                        <Database className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                          Firebase Firestore Database
+                        </h2>
+                        <p className="text-xs text-neutral-400">
+                          Enables instant real-time live content sync across all visitor devices & stores student admission enquiries.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="self-start sm:self-center px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest border border-emerald-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      CONNECTED: {siteContent.firebaseConfig?.projectId || 'swinstitute0'}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-semibold">
                     <div>
-                      <label className="block text-neutral-300 uppercase mb-1">Phone Number</label>
+                      <label className="block text-neutral-400 uppercase mb-1">Firebase Project ID</label>
                       <input
                         type="text"
-                        value={siteContent.contactPhone}
-                        onChange={(e) => setSiteContent({ ...siteContent, contactPhone: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                        value={siteContent.firebaseConfig?.projectId || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), projectId: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="swinstitute0"
                       />
                     </div>
                     <div>
-                      <label className="block text-neutral-300 uppercase mb-1">WhatsApp Number</label>
+                      <label className="block text-neutral-400 uppercase mb-1">Firebase API Key</label>
+                      <input
+                        type="password"
+                        value={siteContent.firebaseConfig?.apiKey || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), apiKey: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="AIzaSy..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 uppercase mb-1">Auth Domain</label>
                       <input
                         type="text"
-                        value={siteContent.contactWhatsapp}
-                        onChange={(e) => setSiteContent({ ...siteContent, contactWhatsapp: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                        value={siteContent.firebaseConfig?.authDomain || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), authDomain: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="swinstitute0.firebaseapp.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 uppercase mb-1">Storage Bucket</label>
+                      <input
+                        type="text"
+                        value={siteContent.firebaseConfig?.storageBucket || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), storageBucket: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="swinstitute0.firebasestorage.app"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 uppercase mb-1">Messaging Sender ID</label>
+                      <input
+                        type="text"
+                        value={siteContent.firebaseConfig?.messagingSenderId || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), messagingSenderId: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="310303663506"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-neutral-400 uppercase mb-1">App ID</label>
+                      <input
+                        type="text"
+                        value={siteContent.firebaseConfig?.appId || ''}
+                        onChange={(e) =>
+                          setSiteContent({
+                            ...siteContent,
+                            firebaseConfig: { ...(siteContent.firebaseConfig || {}), appId: e.target.value },
+                          })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                        placeholder="1:310303663506:web:..."
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-neutral-300 uppercase mb-1">Official Email</label>
+                  {firebaseTestMessage && (
+                    <div
+                      className={`p-3 rounded-xl text-xs font-mono ${
+                        firebaseTestStatus === 'success'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : firebaseTestStatus === 'error'
+                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          : 'bg-white/5 text-neutral-300'
+                      }`}
+                    >
+                      {firebaseTestMessage}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleTestFirebase}
+                      disabled={firebaseTestStatus === 'testing'}
+                      className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <Radio className="w-3.5 h-3.5" />
+                      <span>{firebaseTestStatus === 'testing' ? 'Testing Connection...' : 'Test Cloud Firestore Connection'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. IMGBB CDN IMAGE STORAGE */}
+                <div className="p-6 rounded-2xl bg-[#18181D] border border-white/10 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 rounded-xl bg-[#00F0FF]/20 text-[#00F0FF]">
+                        <Cloud className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                          ImgBB Cloud Image Storage (CDN)
+                        </h2>
+                        <p className="text-xs text-neutral-400">
+                          Uploaded institute logos, course artworks, and student portfolio photos upload directly to ImgBB CDN.
+                        </p>
+                      </div>
+                    </div>
+                    <span className="self-start sm:self-center px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-mono font-bold uppercase tracking-widest border border-emerald-500/30 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      ACTIVE CDN KEY
+                    </span>
+                  </div>
+
+                  <div className="text-xs font-semibold">
+                    <label className="block text-neutral-400 uppercase mb-1">ImgBB API Key</label>
                     <input
-                      type="email"
-                      value={siteContent.contactEmail}
-                      onChange={(e) => setSiteContent({ ...siteContent, contactEmail: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                      type="text"
+                      value={siteContent.imgbbApiKey || ''}
+                      onChange={(e) => setSiteContent({ ...siteContent, imgbbApiKey: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black border border-white/20 text-white text-xs font-mono"
+                      placeholder="07afc547f88e09e5ced81621fd89ddea"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-neutral-300 uppercase mb-1">Bhilai Address</label>
-                    <textarea
-                      rows={2}
-                      value={siteContent.contactAddress}
-                      onChange={(e) => setSiteContent({ ...siteContent, contactAddress: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
-                    />
+                  {imgbbTestMessage && (
+                    <div
+                      className={`p-3 rounded-xl text-xs font-mono ${
+                        imgbbTestStatus === 'success'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : imgbbTestStatus === 'error'
+                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                          : 'bg-white/5 text-neutral-300'
+                      }`}
+                    >
+                      {imgbbTestMessage}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleTestImgBB}
+                      disabled={imgbbTestStatus === 'testing'}
+                      className="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors"
+                    >
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{imgbbTestStatus === 'testing' ? 'Verifying...' : 'Test ImgBB CDN Upload'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. CONTACT & LOCATION SETTINGS */}
+                <div className="p-6 rounded-2xl bg-[#18181D] border border-white/10 space-y-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-sm font-bold uppercase tracking-wider text-white">Campus Location & Contacts</h2>
+                      <p className="text-xs text-neutral-400">Public phone numbers, official WhatsApp helpline, and campus address.</p>
+                    </div>
                   </div>
 
+                  <div className="space-y-4 text-xs font-semibold">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-neutral-300 uppercase mb-1">Phone Number</label>
+                        <input
+                          type="text"
+                          value={siteContent.contactPhone}
+                          onChange={(e) => setSiteContent({ ...siteContent, contactPhone: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-neutral-300 uppercase mb-1">WhatsApp Number</label>
+                        <input
+                          type="text"
+                          value={siteContent.contactWhatsapp}
+                          onChange={(e) => setSiteContent({ ...siteContent, contactWhatsapp: e.target.value })}
+                          className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-neutral-300 uppercase mb-1">Official Email</label>
+                      <input
+                        type="email"
+                        value={siteContent.contactEmail}
+                        onChange={(e) => setSiteContent({ ...siteContent, contactEmail: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-neutral-300 uppercase mb-1">Bhilai Campus Address</label>
+                      <textarea
+                        rows={2}
+                        value={siteContent.contactAddress}
+                        onChange={(e) => setSiteContent({ ...siteContent, contactAddress: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl bg-black border border-white/20 text-white text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* SAVE ALL SETTINGS */}
+                <div className="pt-2">
                   <button
                     onClick={handleSaveAll}
-                    className="px-8 py-3.5 rounded-full bg-[#F20D63] text-white font-bold uppercase tracking-wider cursor-pointer"
+                    className="w-full sm:w-auto px-10 py-4 rounded-full bg-[#F20D63] hover:bg-[#d90b56] text-white font-bold uppercase tracking-wider cursor-pointer shadow-lg shadow-[#F20D63]/30 transition-all flex items-center justify-center gap-2"
                   >
-                    SAVE CONTACT SETTINGS
+                    <Save className="w-4 h-4" />
+                    <span>SAVE ALL SETTINGS & SYNC TO CLOUD</span>
                   </button>
                 </div>
               </div>

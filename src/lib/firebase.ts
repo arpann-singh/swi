@@ -16,12 +16,12 @@ import { SiteContent, Enquiry, FirebaseSettings } from './types';
 
 // Default Firebase Configuration (Uses env vars or default fallback)
 const defaultFirebaseConfig: FirebaseSettings = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || '',
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || '',
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '',
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || 'AIzaSyC4MoSpQe_QsgaCoupH2dKmgHSfLrNqhXA',
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || 'swinstitute0.firebaseapp.com',
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || 'swinstitute0',
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'swinstitute0.firebasestorage.app',
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '310303663506',
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || '1:310303663506:web:19032cd9fed954eeaf8d4b',
 };
 
 let app: FirebaseApp | null = null;

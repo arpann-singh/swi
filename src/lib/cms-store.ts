@@ -66,6 +66,17 @@ export const INITIAL_SECTIONS: SectionConfig[] = [
 ];
 
 export const INITIAL_SITE_CONTENT: SiteContent = {
+  // Integrations & Cloud Config
+  imgbbApiKey: '07afc547f88e09e5ced81621fd89ddea',
+  firebaseConfig: {
+    apiKey: 'AIzaSyC4MoSpQe_QsgaCoupH2dKmgHSfLrNqhXA',
+    authDomain: 'swinstitute0.firebaseapp.com',
+    projectId: 'swinstitute0',
+    storageBucket: 'swinstitute0.firebasestorage.app',
+    messagingSenderId: '310303663506',
+    appId: '1:310303663506:web:19032cd9fed954eeaf8d4b',
+  },
+
   // Global Engine Controls
   cursorStyle: 'radial',
   themeMode: 'light',
@@ -270,6 +281,8 @@ export const getStoredContent = (): SiteContent => {
     return {
       ...INITIAL_SITE_CONTENT,
       ...parsed,
+      imgbbApiKey: parsed.imgbbApiKey || INITIAL_SITE_CONTENT.imgbbApiKey,
+      firebaseConfig: { ...INITIAL_SITE_CONTENT.firebaseConfig, ...(parsed.firebaseConfig || {}) },
       logos: { ...INITIAL_SITE_CONTENT.logos, ...(parsed.logos || {}) },
       colorTheme: { ...INITIAL_SITE_CONTENT.colorTheme, ...(parsed.colorTheme || {}) },
       sectionOrder: Array.isArray(parsed.sectionOrder) && parsed.sectionOrder.length > 0

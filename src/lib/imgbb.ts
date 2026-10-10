@@ -16,7 +16,7 @@ export const uploadToImgBB = async (
   apiKey?: string
 ): Promise<ImgBBResponse> => {
   try {
-    const key = apiKey || process.env.NEXT_PUBLIC_IMGBB_API_KEY || '2d5b6e680a6b9a896d8e8749e7552504'; // Default or provided key
+    const key = apiKey || process.env.NEXT_PUBLIC_IMGBB_API_KEY || '07afc547f88e09e5ced81621fd89ddea';
 
     if (!key) {
       return {
