@@ -117,8 +117,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       {/* ======================================================== */}
       {/* 📱 MOBILE LIGHT FROSTED LIQUID GLASS TOP HEADER          */}
       {/* ======================================================== */}
-      <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-5 py-3.5 bg-white/90 backdrop-blur-2xl border-b border-neutral-200/80 shadow-xs flex items-center justify-between transition-colors">
-        <button onClick={handleLogoTripleTap} className="flex items-center gap-2 text-left">
+      <header className="fixed top-0 left-0 right-0 z-40 lg:hidden px-4 sm:px-6 py-2.5 bg-white/95 backdrop-blur-2xl border-b border-neutral-200/80 shadow-xs flex items-center justify-between transition-colors h-14 sm:h-16">
+        <button onClick={handleLogoTripleTap} className="flex items-center gap-2 text-left shrink-0">
           <SWLogo
             layout="horizontal"
             variant="dark"
@@ -129,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
 
         <div className="flex items-center gap-2">
           {/* Status Badge */}
-          <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-mono font-bold tracking-wider uppercase border border-emerald-500/20 backdrop-blur-md">
+          <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 text-[10px] font-mono font-bold tracking-wider uppercase border border-emerald-500/20 backdrop-blur-md">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
             <span>Admissions Open</span>
           </span>
@@ -138,24 +138,24 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
           <button
             onClick={toggleThemeMode}
             title="Toggle Theme"
-            className="w-9 h-9 rounded-full bg-white border border-neutral-200 text-neutral-800 backdrop-blur-md flex items-center justify-center active:scale-90 transition-all shadow-xs"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white border border-neutral-200 text-neutral-800 backdrop-blur-md flex items-center justify-center active:scale-90 transition-all shadow-xs cursor-pointer"
           >
-            {isDarkMode ? <Sun className="w-4 h-4 text-[#FFB800]" /> : <Moon className="w-4 h-4 text-[#1749C6]" />}
+            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-[#FFB800]" /> : <Moon className="w-3.5 h-3.5 text-[#1749C6]" />}
           </button>
 
           {/* Enquire CTA */}
           <button
             onClick={onOpenEnquiry}
-            className="px-3.5 py-1.5 rounded-full bg-[#F20D63] text-white font-black text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-pink-500/25 active:scale-95 transition-transform"
+            className="px-3.5 py-1.5 rounded-full bg-[#F20D63] text-white font-black text-[10px] sm:text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-pink-500/25 active:scale-95 transition-transform whitespace-nowrap cursor-pointer"
           >
             <span>ENQUIRE</span>
-            <Send className="w-3 h-3" />
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </button>
 
           {/* Drawer Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(true)}
-            className="w-9 h-9 rounded-full bg-[#0B0B0D] text-white flex items-center justify-center active:scale-90 transition-transform ml-1 shadow-md"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-[#0B0B0D] text-white flex items-center justify-center active:scale-90 transition-transform shadow-md cursor-pointer"
           >
             <Menu className="w-4 h-4" />
           </button>
@@ -229,7 +229,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
             <button
               onClick={onOpenEnquiry}
               data-cursor="ENQUIRE"
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all duration-300 bg-gradient-to-r from-[#F20D63] via-[#E00B5B] to-[#F20D63] text-white shadow-[0_8px_25px_rgba(242,13,99,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:shadow-[0_12px_32px_rgba(242,13,99,0.55)] hover:scale-[1.03] active:scale-95 border border-white/30 cursor-pointer"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-black tracking-widest uppercase transition-all duration-300 bg-gradient-to-r from-[#F20D63] via-[#E00B5B] to-[#F20D63] text-white shadow-[0_8px_25px_rgba(242,13,99,0.35),inset_0_1px_1px_rgba(255,255,255,0.4)] hover:shadow-[0_12px_32px_rgba(242,13,99,0.55)] hover:scale-[1.03] active:scale-95 border border-white/30 cursor-pointer whitespace-nowrap"
             >
               <span>ENQUIRE NOW</span>
               <ArrowUpRight className="w-4 h-4" />
@@ -241,8 +241,8 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
       {/* ======================================================== */}
       {/* 📱 MOBILE LIGHT FROSTED BOTTOM FLOATING PILL BAR         */}
       {/* ======================================================== */}
-      <div className="fixed bottom-5 left-4 right-4 z-40 lg:hidden flex justify-center pointer-events-none">
-        <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-3xl text-[#0B0B0D] border border-neutral-300/80 shadow-[0_15px_45px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,1)] rounded-full p-2 flex items-center justify-between gap-1">
+      <div className="fixed bottom-4 left-3 right-3 sm:left-4 sm:right-4 z-40 lg:hidden flex justify-center pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-sm bg-white/95 backdrop-blur-3xl text-[#0B0B0D] border border-neutral-300/80 shadow-[0_15px_45px_rgba(0,0,0,0.12),inset_0_1px_1px_rgba(255,255,255,1)] rounded-full px-2 py-1.5 flex items-center justify-around gap-0.5">
           {mobilePillItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeSection === item.id;
@@ -251,7 +251,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
                 key={item.id}
                 href={item.href}
                 onClick={() => setActiveSection(item.id)}
-                className={`relative flex flex-col items-center justify-center py-1.5 px-3 rounded-full transition-colors ${
+                className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-full transition-colors ${
                   isActive ? 'text-[#F20D63] font-bold' : 'text-neutral-500 hover:text-black'
                 }`}
               >
@@ -263,19 +263,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenEnquiry }) => {
                   />
                 )}
                 <Icon className="w-4 h-4 mb-0.5 relative z-10" />
-                <span className="text-[9px] font-mono tracking-wider relative z-10">{item.label}</span>
+                <span className="text-[9px] font-mono tracking-wider relative z-10 whitespace-nowrap">{item.label}</span>
               </a>
             );
           })}
-
-          {/* Quick Enquire CTA Pill */}
-          <button
-            onClick={onOpenEnquiry}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#F20D63] text-white font-black text-[11px] uppercase tracking-wider shadow-lg shadow-pink-500/30 active:scale-95 shrink-0"
-          >
-            <span>ENQUIRE</span>
-            <Send className="w-3 h-3" />
-          </button>
         </div>
       </div>
 

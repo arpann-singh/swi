@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, MapPin, Phone, MessageSquare, Mail, Compass, Send, CheckCircle2, User, Calendar } from 'lucide-react';
+import { Sparkles, MapPin, Phone, MessageSquare, Mail, Compass, Send, CheckCircle2, User, Calendar, ArrowUpRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { SiteContent } from '@/lib/types';
 import { addEnquiry } from '@/lib/cms-store';
@@ -239,10 +239,11 @@ export const ContactSection: React.FC<ContactSectionProps> = ({ content, onOpenE
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#25D366] text-white font-bold text-xs uppercase shadow-md hover:bg-black transition-colors"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-[#25D366] text-white font-bold text-xs uppercase tracking-wider shadow-md hover:bg-black transition-colors whitespace-nowrap active:scale-95"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>CHAT ON WHATSAPP NOW →</span>
+                  <MessageSquare className="w-4 h-4 shrink-0" />
+                  <span>CHAT ON WHATSAPP</span>
+                  <ArrowUpRight className="w-4 h-4 shrink-0" />
                 </a>
               </div>
             )}

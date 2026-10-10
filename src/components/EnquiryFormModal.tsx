@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, CheckCircle2, MessageSquare, Sparkles, User, Phone, Mail, HelpCircle, ShieldCheck, Compass } from 'lucide-react';
+import { X, Send, CheckCircle2, MessageSquare, Sparkles, User, Phone, Mail, HelpCircle, ShieldCheck, Compass, ArrowUpRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { addEnquiry } from '@/lib/cms-store';
 
@@ -265,20 +265,21 @@ export const EnquiryFormModal: React.FC<EnquiryFormModalProps> = ({
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
                   <a
                     href={getWhatsAppUrl()}
                     target="_blank"
                     rel="noreferrer"
-                    className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#25D366] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-[#0B0B0D] transition-colors shadow-lg"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#25D366] text-white font-bold text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 hover:bg-[#0B0B0D] transition-colors shadow-lg shadow-emerald-500/25 whitespace-nowrap active:scale-95 cursor-pointer"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>CHAT ON WHATSAPP FOR QUICK RESPONSE →</span>
+                    <MessageSquare className="w-4 h-4 shrink-0" />
+                    <span>CHAT ON WHATSAPP</span>
+                    <ArrowUpRight className="w-4 h-4 shrink-0" />
                   </a>
 
                   <button
                     onClick={resetAndClose}
-                    className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#0B0B0D] text-white font-bold text-xs uppercase hover:bg-[#F20D63] transition-colors cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-full bg-[#0B0B0D] text-white font-bold text-xs uppercase hover:bg-[#F20D63] transition-colors cursor-pointer whitespace-nowrap active:scale-95"
                   >
                     CLOSE
                   </button>

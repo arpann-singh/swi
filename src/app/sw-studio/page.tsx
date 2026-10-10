@@ -61,6 +61,7 @@ import {
   ExternalLink,
   Clock,
   UserCheck,
+  MoreVertical,
 } from 'lucide-react';
 import {
   SiteContent,
@@ -103,6 +104,7 @@ export default function SWStudioAdminPage() {
 
   const [livePreview, setLivePreview] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
 
   // Content States
   const [siteContent, setSiteContent] = useState<SiteContent>(getStoredContent());
@@ -816,20 +818,23 @@ export default function SWStudioAdminPage() {
       </AnimatePresence>
 
       {/* Top Admin Bar */}
-      <header className="bg-[#121216] border-b border-white/10 px-4 sm:px-6 py-4 flex items-center justify-between sticky top-0 z-40">
-        <div className="flex items-center gap-3 sm:gap-4">
+      <header className="bg-[#121216] border-b border-white/10 px-4 sm:px-6 py-2.5 sm:py-4 flex items-center justify-between sticky top-0 z-40 h-14 sm:h-16">
+        {/* Left Brand Logo & Title */}
+        <div className="flex items-center gap-2.5 sm:gap-4">
           <SWLogo
             layout="horizontal"
             variant="light"
             size="sm"
             customLogoUrl={siteContent.logos?.adminLogo || siteContent.logos?.headerLogo}
           />
-          <span className="hidden sm:inline-block px-3 py-1 rounded-full bg-[#F20D63] text-white text-[10px] font-mono font-bold uppercase tracking-widest">
-            MASTER CMS
+          <span className="px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[#F20D63] text-white text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-wider sm:tracking-widest shrink-0">
+            STUDIO
           </span>
+
+          {/* Desktop Only Leads Pill */}
           <button
             onClick={() => setActiveTab('enquiries')}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`hidden sm:flex px-2.5 py-1 rounded-full text-[10px] font-mono font-bold uppercase items-center gap-1.5 transition-all cursor-pointer ${
               pendingLeadsCount > 0
                 ? 'bg-[#F20D63] text-white animate-pulse'
                 : 'bg-white/5 text-neutral-400 hover:text-white'
@@ -846,7 +851,8 @@ export default function SWStudioAdminPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        {/* Right Side: Desktop Controls */}
+        <div className="hidden md:flex items-center gap-2 sm:gap-3">
           {/* Live Preview Split Toggle */}
           <button
             onClick={() => setLivePreview(!livePreview)}
@@ -857,28 +863,27 @@ export default function SWStudioAdminPage() {
             }`}
           >
             <Eye className="w-4 h-4" />
-            <span className="hidden sm:inline">{livePreview ? 'HIDE PREVIEW' : 'LIVE PREVIEW'}</span>
+            <span>{livePreview ? 'HIDE PREVIEW' : 'LIVE PREVIEW'}</span>
           </button>
 
           {/* Global Save Button */}
           <button
             onClick={handleSaveAll}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer"
+            className="px-4 py-2 rounded-full bg-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:bg-white hover:text-black transition-colors flex items-center gap-2 shadow-lg shadow-pink-500/25 cursor-pointer whitespace-nowrap"
           >
             <Save className="w-4 h-4" />
-            <span className="hidden sm:inline">SAVE ALL</span>
+            <span>SAVE ALL</span>
           </button>
 
           {/* Master Cloud Sync Button (ImgBB + Firebase) */}
           <button
             onClick={handleFullCloudSync}
             disabled={isFullSyncing}
-            className="px-3 sm:px-4 py-2 sm:py-2.5 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50"
+            className="px-4 py-2 rounded-full bg-gradient-to-r from-[#00F0FF] via-[#1749C6] to-[#F20D63] text-white text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all flex items-center gap-2 shadow-lg shadow-cyan-500/20 cursor-pointer disabled:opacity-50 whitespace-nowrap"
             title="Upload all media to ImgBB CDN and sync data to Firebase Firestore"
           >
             <CloudUpload className={`w-4 h-4 ${isFullSyncing ? 'animate-bounce' : ''}`} />
-            <span className="hidden sm:inline">{isFullSyncing ? 'SYNCING...' : 'SYNC ALL TO CLOUD'}</span>
-            <span className="sm:hidden">{isFullSyncing ? '...' : 'SYNC'}</span>
+            <span>{isFullSyncing ? 'SYNCING...' : 'SYNC ALL TO CLOUD'}</span>
           </button>
 
           <button
@@ -889,7 +894,119 @@ export default function SWStudioAdminPage() {
             <LogOut className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Right Side: Minimal Clean Mobile Actions (Only 3 clean, uncluttered buttons) */}
+        <div className="flex md:hidden items-center gap-2">
+          {/* Mobile Enquiries Notification Bell */}
+          <button
+            onClick={() => setActiveTab('enquiries')}
+            className={`relative p-2 rounded-full transition-all cursor-pointer ${
+              pendingLeadsCount > 0
+                ? 'bg-[#F20D63] text-white animate-pulse'
+                : 'bg-white/10 text-neutral-300 hover:text-white'
+            }`}
+            title="View Realtime Enquiries"
+          >
+            <Bell className="w-4 h-4" />
+            {pendingLeadsCount > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-white text-black font-black text-[9px] flex items-center justify-center font-mono shadow-sm">
+                {pendingLeadsCount}
+              </span>
+            )}
+          </button>
+
+          {/* Mobile Fast Save Button */}
+          <button
+            onClick={handleSaveAll}
+            className="px-3.5 py-1.5 rounded-full bg-[#F20D63] text-white text-[11px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow-md shadow-pink-600/30 active:scale-95 transition-transform cursor-pointer whitespace-nowrap"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>SAVE</span>
+          </button>
+
+          {/* Mobile Quick Menu (3-dots) */}
+          <button
+            onClick={() => setMobileActionsOpen(!mobileActionsOpen)}
+            className="p-2 rounded-full bg-white/10 text-neutral-300 hover:text-white active:scale-90 transition-transform cursor-pointer"
+            title="More Options"
+          >
+            <MoreVertical className="w-4 h-4" />
+          </button>
+        </div>
       </header>
+
+      {/* Mobile Actions Dropdown / Sheet */}
+      <AnimatePresence>
+        {mobileActionsOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="md:hidden bg-[#16161D] border-b border-white/15 px-4 py-3 space-y-2 z-30 shadow-2xl"
+          >
+            <div className="flex items-center justify-between pb-2 border-b border-white/10 text-[10px] font-mono text-neutral-400 uppercase tracking-widest font-bold">
+              <span>QUICK ACTIONS</span>
+              <button
+                onClick={() => setMobileActionsOpen(false)}
+                className="text-neutral-400 hover:text-white p-1"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {/* Sync All to Cloud */}
+              <button
+                onClick={() => {
+                  setMobileActionsOpen(false);
+                  handleFullCloudSync();
+                }}
+                disabled={isFullSyncing}
+                className="p-2.5 rounded-xl bg-gradient-to-r from-[#00F0FF]/20 via-[#1749C6]/20 to-[#F20D63]/20 border border-cyan-500/30 text-white text-xs font-bold flex items-center gap-2 hover:opacity-90 transition-opacity"
+              >
+                <CloudUpload className="w-4 h-4 text-[#00F0FF] shrink-0" />
+                <span className="truncate">{isFullSyncing ? 'Syncing...' : 'Sync Cloud'}</span>
+              </button>
+
+              {/* Toggle Live Preview */}
+              <button
+                onClick={() => {
+                  setLivePreview(!livePreview);
+                  setMobileActionsOpen(false);
+                }}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors"
+              >
+                <Eye className="w-4 h-4 text-[#1749C6] shrink-0" />
+                <span className="truncate">{livePreview ? 'Hide Preview' : 'Live Preview'}</span>
+              </button>
+
+              {/* View Public Website */}
+              <a
+                href="/"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMobileActionsOpen(false)}
+                className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold flex items-center gap-2 hover:bg-white/10 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4 text-[#FFB800] shrink-0" />
+                <span className="truncate">Public Site ↗</span>
+              </a>
+
+              {/* Logout */}
+              <button
+                onClick={() => {
+                  setMobileActionsOpen(false);
+                  handleLogout();
+                }}
+                className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold flex items-center gap-2 hover:bg-red-500/20 transition-colors"
+              >
+                <LogOut className="w-4 h-4 shrink-0" />
+                <span className="truncate">Logout</span>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Save Success Alert Banner */}
       <AnimatePresence>
@@ -898,24 +1015,24 @@ export default function SWStudioAdminPage() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="bg-[#25D366] text-black font-black text-xs uppercase tracking-widest text-center py-2.5 px-4 flex items-center justify-center gap-2 z-50"
+            className="bg-[#25D366] text-black font-black text-xs uppercase tracking-widest text-center py-2 px-4 flex items-center justify-center gap-2 z-50"
           >
             <CheckCircle2 className="w-4 h-4" />
-            <span>ALL CMS SETTINGS, LOGOS, THEMES & SECTION ORDERS SAVED SUCCESSFULLY!</span>
+            <span>SAVED SUCCESSFULLY!</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Mobile Horizontal Navigation Bar */}
-      <div className="md:hidden flex items-center gap-2 overflow-x-auto p-2.5 bg-[#121216] border-b border-white/10 shrink-0 scrollbar-none z-30">
+      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 bg-[#121216] border-b border-white/10 shrink-0 scrollbar-none z-20">
         {[
           { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
-          { id: 'enquiries', label: `Leads (${enquiries.length})`, icon: MessageSquare, badge: pendingLeadsCount },
+          { id: 'enquiries', label: 'Leads', icon: MessageSquare, badge: pendingLeadsCount },
           { id: 'appearance', label: 'Theme', icon: Palette },
           { id: 'logos', label: 'Logos', icon: Upload },
           { id: 'section-reorder', label: 'Reorder', icon: Layers },
-          { id: 'courses', label: `Courses (${courses.length})`, icon: BookOpen },
-          { id: 'gallery', label: `Gallery (${gallery.length})`, icon: ImageIcon },
+          { id: 'courses', label: 'Courses', icon: BookOpen },
+          { id: 'gallery', label: 'Gallery', icon: ImageIcon },
           { id: 'settings', label: 'Settings', icon: Settings },
         ].map((item) => {
           const Icon = item.icon;
@@ -924,16 +1041,16 @@ export default function SWStudioAdminPage() {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id as any)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
                 isActive
                   ? 'bg-[#F20D63] text-white shadow-md shadow-pink-600/30'
                   : 'bg-white/5 text-neutral-300 hover:bg-white/10'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <Icon className="w-3.5 h-3.5 shrink-0" />
               <span>{item.label}</span>
               {item.badge && item.badge > 0 ? (
-                <span className="px-1.5 py-0.5 rounded-full bg-white text-black text-[9px] font-mono font-black">
+                <span className="px-1.5 py-0.2 rounded-full bg-white text-black text-[9px] font-mono font-black shrink-0">
                   {item.badge}
                 </span>
               ) : null}
